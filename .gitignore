@@ -6,3 +6,4 @@ tmp
 v8-compile-cache-*
 node-compile-cache
 coverage
+assets
