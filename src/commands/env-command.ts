@@ -6,16 +6,13 @@ function print(content: string) {
 }
 
 export function envCommand(): void {
-  const exportations = getAllRuntimes().flatMap((runtime) => {
-    const envEntries = Object.entries(runtime.env());
-    const envExportations = envEntries.map(([k, v]) => `export ${k}="${v}"`);
-    const pathExportation = envEntries.map(([k]) => `$${k}/bin`).join(":");
-    return [...envExportations, `export PATH="${pathExportation}:$PATH"`];
-  });
+  const envs = getAllRuntimes()
+    .map((runtime) => runtime.env())
+    .reduce((acc, cur) => ({ ...acc, ...cur }), {});
 
   print(
     [
-      ...exportations,
+      ...Object.entries(envs).map(([k, v]) => `export ${k}="${v}"`),
       `
 if [ -n "$ZSH_VERSION" ]; then
   # zsh environment - use chpwd hook
@@ -32,7 +29,9 @@ else
 fi
 `.trim(),
       "jrm use",
-      "hash -r", // Refresh hash table, so that the new PATH takes effect.
+      `export PATH="${Object.keys(envs)
+        .map((k) => `$${k}/bin`)
+        .join(":")}:$PATH"`,
     ].join("\n"),
   );
 }

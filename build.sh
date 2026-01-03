@@ -18,11 +18,24 @@ declare -A platforms=(
   ["x86_64-unknown-linux-gnu"]="jrm-linux-x64"
   ["aarch64-unknown-linux-gnu"]="jrm-linux-arm64"
 )
-curl -fsSL https://deno.land/install.sh | sh # TODO: Not specify a version. Optimize it.
+
+if [ -n "$CI" ]; then
+  # In CI: install deno as before
+  curl -fsSL https://deno.land/install.sh | sh # TODO: Not specify a version. Optimize it.
+  DENO_CMD="~/.deno/bin/deno"
+else
+  # Not in CI: check if deno command exists
+  if ! command -v deno &> /dev/null; then
+    echo "Error: deno command not found! You should install deno first!"
+    exit 1
+  fi
+  DENO_CMD="deno"
+fi
+
 for target in "${!platforms[@]}"; do
   output_name="${platforms[$target]}"
   echo "Building for $target -> assets/$output_name"
-  ~/.deno/bin/deno compile \
+  $DENO_CMD compile \
     --allow-net="nodejs.org" \
     --allow-write \
     --allow-read \

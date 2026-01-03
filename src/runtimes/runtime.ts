@@ -4,6 +4,8 @@ import path from "node:path";
 import process from "node:process";
 import { createInterface } from "node:readline";
 import semver from "semver";
+import { createRelativeSymlink } from "../utils/create-relative-symlink.ts";
+import { exists } from "../utils/exists.ts";
 import { Detector } from "./detector.ts";
 
 export abstract class Runtime {
@@ -62,23 +64,6 @@ export abstract class Runtime {
       .sort((x, y) => semver.compare(y, x));
   }
 
-  private async forceCreateSymlink(absolutePath: string, version: string) {
-    if (!path.isAbsolute(absolutePath)) {
-      throw new TypeError(`Path '${absolutePath}' is not an absolute path.`);
-    }
-    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
-    await fs.unlink(absolutePath).catch(() => {
-      /* do nothing */
-    });
-    await fs.symlink(
-      path.relative(
-        path.dirname(absolutePath),
-        path.join(this.getVersionsDir(), `v${version}`),
-      ),
-      absolutePath,
-    );
-  }
-
   protected abstract installRaw(
     version: string,
     installDir: string,
@@ -112,9 +97,9 @@ export abstract class Runtime {
       updatedInstalledVersions.length === 1 &&
       updatedInstalledVersions[0] === version
     ) {
-      await this.forceCreateSymlink(
+      await createRelativeSymlink(
+        path.join(this.getVersionsDir(), `v${updatedInstalledVersions[0]}`),
         this.getDefaultAliasPath(),
-        updatedInstalledVersions[0],
       );
     }
   }
@@ -127,6 +112,17 @@ export abstract class Runtime {
         `JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()} is not set.`,
       );
     }
+    if (!path.isAbsolute(multishellPath)) {
+      throw new TypeError(
+        `Value of JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()} is not an absolute path.`,
+      );
+    }
+
+    // 0. Init
+    const isDefaultAliasExisting = await exists(this.getDefaultAliasPath());
+    await (isDefaultAliasExisting
+      ? createRelativeSymlink(this.getDefaultAliasPath(), multishellPath)
+      : fs.mkdir(path.join(multishellPath, "bin"), { recursive: true }));
 
     // 1. No version range, do nothing.
     const versionRange =
@@ -142,7 +138,10 @@ export abstract class Runtime {
       semver.satisfies(installedVersion, versionRange),
     );
     if (satisfiedVersion) {
-      await this.forceCreateSymlink(multishellPath, satisfiedVersion);
+      await createRelativeSymlink(
+        path.join(this.getVersionsDir(), `v${satisfiedVersion}`),
+        multishellPath,
+      );
       process.stdout.write(`Using ${this.name}@${satisfiedVersion}\n`);
       return;
     }
@@ -158,7 +157,10 @@ export abstract class Runtime {
       );
       if (["y", "yes"].includes(answer.toLowerCase())) {
         await this.install(targetVersion);
-        await this.forceCreateSymlink(multishellPath, targetVersion);
+        await createRelativeSymlink(
+          path.join(this.getVersionsDir(), `v${targetVersion}`),
+          multishellPath,
+        );
         process.stdout.write(`Using ${this.name}@${targetVersion}\n`);
       }
       return;
