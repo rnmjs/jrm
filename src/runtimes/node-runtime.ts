@@ -10,6 +10,7 @@ export class NodeRuntime extends Runtime {
   private readonly NODE_DIST_MIRROR = "https://nodejs.org/dist";
 
   override name = "node";
+  protected override bundledBinaries = ["npm", "npx"];
 
   protected override async getRemoteVersionsRaw(): Promise<string[]> {
     const json = await fetch(`${this.NODE_DIST_MIRROR}/index.json`).then(

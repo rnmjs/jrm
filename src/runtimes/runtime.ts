@@ -10,6 +10,10 @@ import { Detector } from "./detector.ts";
 
 export abstract class Runtime {
   abstract readonly name: string;
+  /**
+   * Other bundled binaries of this runtime, like npm and npx in node.
+   */
+  protected abstract readonly bundledBinaries: string[];
   protected readonly platform = os.platform();
   protected readonly arch = os.arch();
   private readonly home = path.join(os.homedir(), ".jrm");
@@ -120,9 +124,22 @@ export abstract class Runtime {
 
     // 0. Init
     const isDefaultAliasExisting = await exists(this.getDefaultAliasPath());
-    await (isDefaultAliasExisting
-      ? createRelativeSymlink(this.getDefaultAliasPath(), multishellPath)
-      : fs.mkdir(path.join(multishellPath, "bin"), { recursive: true }));
+    if (isDefaultAliasExisting) {
+      await createRelativeSymlink(this.getDefaultAliasPath(), multishellPath);
+    } else {
+      await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
+      for (const binary of [...this.bundledBinaries, this.name]) {
+        await fs.writeFile(
+          path.join(multishellPath, "bin", binary),
+          [
+            "#!/usr/bin/env bash",
+            `echo 'No ${this.name} is used. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
+            "exit 1",
+          ].join("\n"),
+        );
+        await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
+      }
+    }
 
     // 1. No version range, do nothing.
     const versionRange =
