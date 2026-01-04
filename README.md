@@ -16,15 +16,13 @@ A fast and simple JavaScript runtime version manager for Node.js, Bun, and Deno.
 
 ### Download from GitHub Releases
 
-1. Go to the [GitHub Releases](https://github.com/rnmjs/jrm/releases) page
-2. Download the latest binary for your platform
-3. Make it executable and move to `/usr/local/bin`:
-
 ```bash
 # For Linux/macOS
-chmod +x jrm
-sudo mv jrm /usr/local/bin/
+curl -L "https://github.com/rnmjs/jrm/releases/latest/download/jrm-$(uname -s)-$(uname -m)" -o /usr/local/bin/jrm
+chmod +x /usr/local/bin/jrm
 ```
+
+> Go to the [GitHub Releases](https://github.com/rnmjs/jrm/releases) for more assets.
 
 ### Verify Installation
 
@@ -86,16 +84,6 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
   }
 }
 ```
-
-## 🛠️ How It Works
-
-1. **Environment Setup**: `jrm env` generates shell commands that set up PATH and environment variables
-2. **Version Detection**: JRM searches for version specifications in:
-   - `.{runtime}-version` files (e.g., `.node-version`)
-   - `package.json` devEngines configuration
-   - Command line arguments
-3. **Automatic Installation**: If a required version isn't installed, JRM automatically downloads and installs it
-4. **Symlink Management**: JRM uses symlinks to switch between different runtime versions efficiently
 
 ## 🤝 Contributing
 
