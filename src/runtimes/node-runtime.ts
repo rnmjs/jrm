@@ -44,6 +44,6 @@ export class NodeRuntime extends Runtime {
       path.join(installDir, `node-v${version}-${this.platform}-${this.arch}`),
       path.join(installDir, `v${version}`),
     );
-    await fs.unlink(downloadedPath);
+    await fs.rm(downloadedPath);
   }
 }

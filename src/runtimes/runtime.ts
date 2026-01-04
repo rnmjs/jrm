@@ -113,7 +113,7 @@ export abstract class Runtime {
       );
     }
     if (!path.isAbsolute(multishellPath)) {
-      throw new TypeError(
+      throw new Error(
         `Value of JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()} is not an absolute path.`,
       );
     }
@@ -173,6 +173,7 @@ export abstract class Runtime {
     return {
       [`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`]:
         this.getMultishellPath(),
+      // TODO: Remove this env variable. It seems useless.
       [`JRM_DEFAULT_ALIAS_PATH_OF_${this.name.toUpperCase()}`]:
         this.getDefaultAliasPath(),
     };
