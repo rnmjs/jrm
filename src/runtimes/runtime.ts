@@ -190,9 +190,6 @@ export abstract class Runtime {
     return {
       [`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`]:
         this.getMultishellPath(),
-      // TODO: Remove this env variable. It seems useless.
-      [`JRM_DEFAULT_ALIAS_PATH_OF_${this.name.toUpperCase()}`]:
-        this.getDefaultAliasPath(),
     };
   }
 
