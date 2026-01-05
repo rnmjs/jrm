@@ -1,5 +1,12 @@
 # jrm
 
+## 0.0.5
+
+### Patch Changes
+
+- a540478: fix: fix crash when `devEngines` is absent in `package.json`
+- d9adf60: feat: support bun
+
 ## 0.0.4
 
 ### Patch Changes
