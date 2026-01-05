@@ -8,6 +8,7 @@ import { Runtime } from "./runtime.ts";
 
 export class DenoRuntime extends Runtime {
   private readonly DENO_DIST_MIRROR = "https://dl.deno.land";
+  private readonly GITHUB_API_URL = "https://api.github.com";
 
   override name = "deno";
   protected override bundledBinaries: string[] = [];
@@ -40,7 +41,7 @@ export class DenoRuntime extends Runtime {
     // eslint-disable-next-line @fenge/no-restricted-loops -- allow it
     for (let page = 1; ; page += 1) {
       const response = await fetch(
-        `https://api.github.com/repos/denoland/deno/tags?per_page=${perPage}&page=${page}`,
+        `${this.GITHUB_API_URL}/repos/denoland/deno/tags?per_page=${perPage}&page=${page}`,
       );
       if (!response.ok) {
         break;
