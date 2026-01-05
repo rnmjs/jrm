@@ -1,5 +1,12 @@
 # jrm
 
+## 0.0.4
+
+### Patch Changes
+
+- 11c8875: fix: support array objects for `devEngines.runtime` field
+- 327aeb9: fix: don't ask for permission before installing deno
+
 ## 0.0.3
 
 ### Patch Changes
