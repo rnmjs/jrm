@@ -36,7 +36,7 @@ for target in "${!platforms[@]}"; do
   output_name="${platforms[$target]}"
   echo "Building for $target -> assets/$output_name"
   $DENO_CMD compile \
-    --allow-net="nodejs.org,dl.deno.land,api.github.com" \
+    --allow-net="nodejs.org,dl.deno.land,api.github.com,github.com" \
     --allow-write \
     --allow-read \
     --allow-env \
