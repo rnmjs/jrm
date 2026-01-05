@@ -35,8 +35,10 @@ fi
 for target in "${!platforms[@]}"; do
   output_name="${platforms[$target]}"
   echo "Building for $target -> assets/$output_name"
+
+  # Downloading from github.com will redirect to release-assets.githubusercontent.com
   $DENO_CMD compile \
-    --allow-net="nodejs.org,dl.deno.land,api.github.com,github.com" \
+    --allow-net="nodejs.org,dl.deno.land,api.github.com,github.com,release-assets.githubusercontent.com" \
     --allow-write \
     --allow-read \
     --allow-env \

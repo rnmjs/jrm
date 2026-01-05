@@ -39,8 +39,8 @@ export class Detector {
 
   async detectVersionRange(currentDir: string): Promise<string | undefined> {
     const result =
-      (await this.detectByVersionFile(currentDir)) ??
-      (await this.detectByPackageJsonFile(currentDir));
+      (await this.detectByVersionFile(currentDir).catch(() => undefined)) ??
+      (await this.detectByPackageJsonFile(currentDir).catch(() => undefined));
     if (result) {
       return result;
     }
