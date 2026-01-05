@@ -25,12 +25,13 @@ export class Detector {
     if (!(await exists(packageJsonPath))) return undefined;
 
     const content = await fs.readFile(packageJsonPath, "utf8");
-    const { devEngines } = JSON.parse(content);
-    const runtime: ({ name?: string; version?: string } | undefined)[] =
-      Array.isArray(devEngines?.runtime)
-        ? devEngines.runtime
-        : [devEngines.runtime];
-    const { name, version } = runtime.find((r) => r?.name === this.name) ?? {};
+    const rawRuntime = JSON.parse(content)?.devEngines?.runtime;
+    const runtime: { name?: string; version?: string }[] = !rawRuntime
+      ? []
+      : Array.isArray(rawRuntime)
+        ? rawRuntime
+        : [rawRuntime];
+    const { name, version } = runtime.find((r) => r.name === this.name) ?? {};
     return name === this.name && typeof version === "string"
       ? version
       : undefined;
