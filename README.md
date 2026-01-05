@@ -85,6 +85,11 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
 }
 ```
 
+## See Also
+
+- [fnm](https://github.com/Schniz/fnm) - 🚀 Fast and simple Node.js version manager, built in Rust. (JRM is inspired by this project)
+- [@rnm/pm](https://github.com/rnmjs/pm) - 📦 Unified Package Manager for Node.js (npm, yarn, pnpm)
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
