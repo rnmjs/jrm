@@ -1,5 +1,11 @@
 # jrm
 
+## 0.0.6
+
+### Patch Changes
+
+- 2ad92b7: fix: vanish unexpected prompt before installing bun
+
 ## 0.0.5
 
 ### Patch Changes
