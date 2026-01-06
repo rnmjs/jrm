@@ -1,6 +1,6 @@
 # JRM - JavaScript Runtime Manager
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![GitHub license](https://img.shields.io/github/license/rnmjs/jrm)](./LICENSE)
 [![](./badge/coverage.svg)]()
 
 A fast and simple JavaScript runtime version manager for Node.js, Bun, and Deno.
@@ -17,7 +17,7 @@ A fast and simple JavaScript runtime version manager for Node.js, Bun, and Deno.
 ### Download from GitHub Releases
 
 ```bash
-# For Linux/macOS
+# For Linux/macOS. You may need to add `sudo` in front of these two commands.
 curl -L "https://github.com/rnmjs/jrm/releases/latest/download/jrm-$(uname -s)-$(uname -m)" -o /usr/local/bin/jrm
 chmod +x /usr/local/bin/jrm
 ```
