@@ -196,4 +196,27 @@ export abstract class Runtime {
   async list(): Promise<string[]> {
     return await this.getInstalledVersions();
   }
+
+  async alias(aliasName: string, version: string): Promise<void> {
+    // Validate that version is a valid semver
+    if (!semver.valid(version)) {
+      throw new Error(
+        `Invalid version: ${version}. Expected a valid semver (e.g., 20.0.0).`,
+      );
+    }
+
+    const aliasPath = path.join(this.getAliasesDir(), aliasName);
+    const versionPath = path.join(this.getVersionsDir(), `v${version}`);
+
+    // Check if the specific version is installed
+    if (!(await exists(versionPath))) {
+      throw new Error(
+        `${this.name}@${version} is not installed. Run \`jrm install ${this.name}@${version}\` first.`,
+      );
+    }
+
+    // We don't need to create the alias directory here, because if the version is installed, the alias directory must exist.
+    // JRM will create the default alias once the first version is installed.
+    await createRelativeSymlink(versionPath, aliasPath);
+  }
 }

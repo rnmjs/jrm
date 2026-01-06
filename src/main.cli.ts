@@ -2,6 +2,7 @@
 import { Command } from "commander";
 // eslint-disable-next-line esm/no-external-src-imports -- We can't use fs to read package.json.
 import pkgJson from "../package.json" with { type: "json" };
+import { aliasCommand } from "./commands/alias-command.ts";
 import { envCommand } from "./commands/env-command.ts";
 import { installCommand } from "./commands/install-command.ts";
 import { listCommand } from "./commands/list-command.ts";
@@ -70,5 +71,21 @@ program
   .action(async (runtimeSpecs: string[]) => {
     await useCommand(parseRuntimeSpecs(runtimeSpecs));
   });
+
+program
+  .command("alias")
+  .description("create an alias for a specific runtime version")
+  .argument("<runtime>", "runtime name (e.g., node, deno, bun)")
+  .requiredOption("--name <name>", "alias name")
+  .requiredOption("--version <version>", "runtime version")
+  .action(
+    async (runtime: string, options: { name: string; version: string }) => {
+      await aliasCommand({
+        runtime,
+        name: options.name,
+        version: options.version,
+      });
+    },
+  );
 
 program.parse();
