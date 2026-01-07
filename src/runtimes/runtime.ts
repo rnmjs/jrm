@@ -50,6 +50,10 @@ export abstract class Runtime {
     await fs.symlink(path.relative(path.dirname(source), target), source);
   }
 
+  private async getVersionBySymlink(source: string) {
+    return path.basename(await fs.realpath(source)).replace(/^v/, "");
+  }
+
   private async getInstalledVersions(): Promise<string[]> {
     return (await fs.readdir(this.getVersionsDir()).catch(() => []))
       .filter((file) => file.startsWith("v"))
@@ -121,13 +125,9 @@ export abstract class Runtime {
     }
 
     // 0. Init
-    const realpath = await fs
-      .realpath(this.getDefaultAliasPath())
-      .catch(() => undefined);
-    const defaultVersion = (realpath && path.basename(realpath))?.replace(
-      /^v/,
-      "",
-    );
+    const defaultVersion = (await exists(this.getDefaultAliasPath()))
+      ? await this.getVersionBySymlink(this.getDefaultAliasPath())
+      : undefined;
     if (defaultVersion) {
       await this.createVersionSymlink(defaultVersion, multishellPath);
     } else {
@@ -198,8 +198,33 @@ export abstract class Runtime {
     };
   }
 
-  async list(): Promise<string[]> {
-    return await this.getInstalledVersions();
+  async list() {
+    const promises = (
+      await fs
+        .readdir(this.getAliasesDir(), { withFileTypes: true })
+        .catch(() => [])
+    ).map(async (alias) => ({
+      name: alias.name,
+      version: await this.getVersionBySymlink(
+        path.join(alias.parentPath, alias.name),
+      ),
+    }));
+    const aliases = await Promise.all(promises);
+
+    // Get currently using version
+    const multishellPath =
+      process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
+    const usingVersion = !multishellPath
+      ? undefined
+      : await this.getVersionBySymlink(multishellPath);
+
+    return (await this.getInstalledVersions()).map((version) => ({
+      version,
+      aliases: aliases
+        .filter((alias) => alias.version === version)
+        .map((alias) => alias.name),
+      isUsing: usingVersion === version,
+    }));
   }
 
   async alias(aliasName: string, version: string): Promise<void> {

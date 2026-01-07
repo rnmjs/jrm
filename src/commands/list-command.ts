@@ -1,4 +1,5 @@
 import process from "node:process";
+import { styleText } from "node:util";
 import { getAllRuntimes, getRuntime } from "../common.ts";
 
 function print(content: string) {
@@ -15,7 +16,11 @@ export async function listCommand(runtimeName?: string): Promise<void> {
     } else {
       print(`${runtime.name} versions:`);
       versions.forEach((version) => {
-        print(`  ${version}`);
+        const alias =
+          version.aliases.length <= 0 ? "" : `(${version.aliases.join(", ")})`;
+        print(
+          `${version.isUsing ? "* " : "  "}${version.version} ${styleText("dim", alias)}`,
+        );
       });
     }
   }
