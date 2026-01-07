@@ -1,3 +1,4 @@
+import process from "node:process";
 import { getRuntime } from "../common.ts";
 import type { Runtime } from "../runtimes/runtime.ts";
 
@@ -23,6 +24,11 @@ export async function installCommand(
   );
 
   for (const { runtime, version } of items) {
-    await runtime.install(version);
+    const installed = await runtime.install(version);
+    if (!installed) {
+      process.stdout.write(
+        `${runtime.name}@${version} is already installed, skip.\n`,
+      );
+    }
   }
 }

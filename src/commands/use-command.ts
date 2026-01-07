@@ -1,3 +1,4 @@
+import process from "node:process";
 import { getAllRuntimes, getRuntime } from "../common.ts";
 import type { Runtime } from "../runtimes/runtime.ts";
 
@@ -16,6 +17,9 @@ export async function useCommand(options: UseCommandOptions[]): Promise<void> {
         }));
 
   for (const { runtime, version } of items) {
-    await runtime.use(version);
+    const usingVersion = await runtime.use(version);
+    if (usingVersion) {
+      process.stdout.write(`Using ${runtime.name}@${usingVersion}\n`);
+    }
   }
 }

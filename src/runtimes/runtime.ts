@@ -74,7 +74,7 @@ export abstract class Runtime {
     version: string,
     installDir: string,
   ): Promise<void>;
-  async install(versionRange: string): Promise<void> {
+  async install(versionRange: string): Promise<boolean> {
     let version = semver.valid(versionRange);
     if (!version) {
       const remoteVersions = await this.getRemoteVersions();
@@ -90,10 +90,7 @@ export abstract class Runtime {
 
     const installedVersions = await this.getInstalledVersions();
     if (installedVersions.includes(version)) {
-      process.stdout.write(
-        `${this.name}@${version} is already installed, skip.\n`,
-      );
-      return;
+      return false;
     }
 
     await this.installRaw(version, this.getVersionsDir());
@@ -108,9 +105,10 @@ export abstract class Runtime {
         this.getDefaultAliasPath(),
       );
     }
+    return true;
   }
 
-  async use(version?: string) {
+  async use(version?: string): Promise<string | undefined> {
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     if (!multishellPath) {
@@ -150,14 +148,13 @@ export abstract class Runtime {
       version ??
       (await new Detector(this.name).detectVersionRange(process.cwd()));
     if (!versionRange) {
-      return;
+      return undefined;
     }
 
     // 2. Use default version first.
     if (defaultVersion && semver.satisfies(defaultVersion, versionRange)) {
       await this.createVersionSymlink(defaultVersion, multishellPath);
-      process.stdout.write(`Using ${this.name}@${defaultVersion}\n`);
-      return;
+      return defaultVersion;
     }
 
     // 3. Use installed version.
@@ -167,8 +164,7 @@ export abstract class Runtime {
     );
     if (satisfiedVersion) {
       await this.createVersionSymlink(satisfiedVersion, multishellPath);
-      process.stdout.write(`Using ${this.name}@${satisfiedVersion}\n`);
-      return;
+      return satisfiedVersion;
     }
 
     // 4. Use remote version.
@@ -183,9 +179,9 @@ export abstract class Runtime {
       if (["y", "yes"].includes(answer.toLowerCase())) {
         await this.install(targetVersion);
         await this.createVersionSymlink(targetVersion, multishellPath);
-        process.stdout.write(`Using ${this.name}@${targetVersion}\n`);
+        return targetVersion;
       }
-      return;
+      return undefined;
     }
 
     throw new Error(`No remote version satisfies ${versionRange}.`);
