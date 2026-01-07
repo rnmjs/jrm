@@ -25,7 +25,7 @@ function parseRuntimeSpecs(runtimeSpecs: string[]) {
   });
 }
 
-const program = new Command();
+const program = new Command().enablePositionalOptions();
 
 program
   .name(pkgJson.name)

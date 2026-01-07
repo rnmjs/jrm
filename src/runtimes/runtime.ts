@@ -149,7 +149,21 @@ export abstract class Runtime {
       return;
     }
 
-    // 2. Use installed version.
+    // 2. Use default version first.
+    const realpath = await fs
+      .realpath(this.getDefaultAliasPath())
+      .catch(() => undefined);
+    const defaultVersion = (realpath && path.basename(realpath))?.replace(
+      /^v/,
+      "",
+    );
+    if (defaultVersion && semver.satisfies(defaultVersion, versionRange)) {
+      await createRelativeSymlink(this.getDefaultAliasPath(), multishellPath);
+      process.stdout.write(`Using ${this.name}@${defaultVersion}\n`);
+      return;
+    }
+
+    // 3. Use installed version.
     const installedVersions = await this.getInstalledVersions();
     const satisfiedVersion = installedVersions.find((installedVersion) =>
       semver.satisfies(installedVersion, versionRange),
@@ -163,7 +177,7 @@ export abstract class Runtime {
       return;
     }
 
-    // 3. Use remote version.
+    // 4. Use remote version.
     const remoteVersions = await this.getRemoteVersions();
     const targetVersion = remoteVersions.find((remoteVersion) =>
       semver.satisfies(remoteVersion, versionRange),
