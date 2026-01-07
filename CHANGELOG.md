@@ -1,5 +1,11 @@
 # jrm
 
+## 0.0.7
+
+### Patch Changes
+
+- 66ce092: feat: support `alias` command
+
 ## 0.0.6
 
 ### Patch Changes
