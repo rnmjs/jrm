@@ -123,9 +123,18 @@ export abstract class Runtime {
     }
 
     // 0. Init
-    const isDefaultAliasExisting = await exists(this.getDefaultAliasPath());
-    if (isDefaultAliasExisting) {
-      await createRelativeSymlink(this.getDefaultAliasPath(), multishellPath);
+    const realpath = await fs
+      .realpath(this.getDefaultAliasPath())
+      .catch(() => undefined);
+    const defaultVersion = (realpath && path.basename(realpath))?.replace(
+      /^v/,
+      "",
+    );
+    if (defaultVersion) {
+      await createRelativeSymlink(
+        path.join(this.getVersionsDir(), `v${defaultVersion}`),
+        multishellPath,
+      );
     } else {
       await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
       for (const binary of [...this.bundledBinaries, this.name]) {
@@ -150,15 +159,11 @@ export abstract class Runtime {
     }
 
     // 2. Use default version first.
-    const realpath = await fs
-      .realpath(this.getDefaultAliasPath())
-      .catch(() => undefined);
-    const defaultVersion = (realpath && path.basename(realpath))?.replace(
-      /^v/,
-      "",
-    );
     if (defaultVersion && semver.satisfies(defaultVersion, versionRange)) {
-      await createRelativeSymlink(this.getDefaultAliasPath(), multishellPath);
+      await createRelativeSymlink(
+        path.join(this.getVersionsDir(), `v${defaultVersion}`),
+        multishellPath,
+      );
       process.stdout.write(`Using ${this.name}@${defaultVersion}\n`);
       return;
     }
