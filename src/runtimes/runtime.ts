@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { createInterface } from "node:readline";
 import semver from "semver";
+import { ask } from "../utils/ask.ts";
 import { createRelativeSymlink } from "../utils/create-relative-symlink.ts";
 import { exists } from "../utils/exists.ts";
 import { Detector } from "./detector.ts";
@@ -36,20 +36,6 @@ export abstract class Runtime {
 
   private getMultishellPath() {
     return path.join(this.getMultishellsDir(), `${process.ppid}_${Date.now()}`);
-  }
-
-  private async ask(question: string): Promise<string> {
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    return await new Promise((resolve) => {
-      rl.question(question, (answer) => {
-        rl.close();
-        resolve(answer.trim());
-      });
-    });
   }
 
   private async getInstalledVersions(): Promise<string[]> {
@@ -188,7 +174,7 @@ export abstract class Runtime {
       semver.satisfies(remoteVersion, versionRange),
     );
     if (targetVersion) {
-      const answer = await this.ask(
+      const answer = await ask(
         `${this.name}@${targetVersion} (satisfies ${versionRange}) is not installed. Do you want to install it? (y/N): `,
       );
       if (["y", "yes"].includes(answer.toLowerCase())) {
