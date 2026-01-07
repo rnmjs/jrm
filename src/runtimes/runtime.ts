@@ -4,7 +4,6 @@ import path from "node:path";
 import process from "node:process";
 import semver from "semver";
 import { ask } from "../utils/ask.ts";
-import { createRelativeSymlink } from "../utils/create-relative-symlink.ts";
 import { exists } from "../utils/exists.ts";
 import { Detector } from "./detector.ts";
 
@@ -36,6 +35,19 @@ export abstract class Runtime {
 
   private getMultishellPath() {
     return path.join(this.getMultishellsDir(), `${process.ppid}_${Date.now()}`);
+  }
+
+  private async createVersionSymlink(version: string, source: string) {
+    if (!path.isAbsolute(source)) {
+      throw new TypeError(`Source path '${source}' is not an absolute path.`);
+    }
+    const target = path.join(this.getVersionsDir(), `v${version}`);
+
+    await fs.mkdir(path.dirname(source), { recursive: true });
+    await fs.rm(source, { recursive: true }).catch(() => {
+      /* do nothing */
+    });
+    await fs.symlink(path.relative(path.dirname(source), target), source);
   }
 
   private async getInstalledVersions(): Promise<string[]> {
@@ -87,8 +99,8 @@ export abstract class Runtime {
       updatedInstalledVersions.length === 1 &&
       updatedInstalledVersions[0] === version
     ) {
-      await createRelativeSymlink(
-        path.join(this.getVersionsDir(), `v${updatedInstalledVersions[0]}`),
+      await this.createVersionSymlink(
+        updatedInstalledVersions[0],
         this.getDefaultAliasPath(),
       );
     }
@@ -117,10 +129,7 @@ export abstract class Runtime {
       "",
     );
     if (defaultVersion) {
-      await createRelativeSymlink(
-        path.join(this.getVersionsDir(), `v${defaultVersion}`),
-        multishellPath,
-      );
+      await this.createVersionSymlink(defaultVersion, multishellPath);
     } else {
       await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
       for (const binary of [...this.bundledBinaries, this.name]) {
@@ -146,10 +155,7 @@ export abstract class Runtime {
 
     // 2. Use default version first.
     if (defaultVersion && semver.satisfies(defaultVersion, versionRange)) {
-      await createRelativeSymlink(
-        path.join(this.getVersionsDir(), `v${defaultVersion}`),
-        multishellPath,
-      );
+      await this.createVersionSymlink(defaultVersion, multishellPath);
       process.stdout.write(`Using ${this.name}@${defaultVersion}\n`);
       return;
     }
@@ -160,10 +166,7 @@ export abstract class Runtime {
       semver.satisfies(installedVersion, versionRange),
     );
     if (satisfiedVersion) {
-      await createRelativeSymlink(
-        path.join(this.getVersionsDir(), `v${satisfiedVersion}`),
-        multishellPath,
-      );
+      await this.createVersionSymlink(satisfiedVersion, multishellPath);
       process.stdout.write(`Using ${this.name}@${satisfiedVersion}\n`);
       return;
     }
@@ -179,10 +182,7 @@ export abstract class Runtime {
       );
       if (["y", "yes"].includes(answer.toLowerCase())) {
         await this.install(targetVersion);
-        await createRelativeSymlink(
-          path.join(this.getVersionsDir(), `v${targetVersion}`),
-          multishellPath,
-        );
+        await this.createVersionSymlink(targetVersion, multishellPath);
         process.stdout.write(`Using ${this.name}@${targetVersion}\n`);
       }
       return;
@@ -222,6 +222,6 @@ export abstract class Runtime {
 
     // We don't need to create the alias directory here, because if the version is installed, the alias directory must exist.
     // JRM will create the default alias once the first version is installed.
-    await createRelativeSymlink(versionPath, aliasPath);
+    await this.createVersionSymlink(version, aliasPath);
   }
 }
