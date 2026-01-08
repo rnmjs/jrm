@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { exists } from "../utils/exists.ts";
+import { exists } from "./utils/exists.ts";
 
 export class Detector {
   private readonly name: string;

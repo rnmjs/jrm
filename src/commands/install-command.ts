@@ -1,6 +1,6 @@
 import process from "node:process";
 import { getRuntime } from "../common.ts";
-import type { Runtime } from "../runtimes/runtime.ts";
+import type { Runtime } from "../runtime.ts";
 
 export interface InstallCommandOptions {
   runtime: string;

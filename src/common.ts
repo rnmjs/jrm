@@ -1,7 +1,7 @@
+import type { Runtime } from "./runtime.ts";
 import { BunRuntime } from "./runtimes/bun-runtime.ts";
 import { DenoRuntime } from "./runtimes/deno-runtime.ts";
 import { NodeRuntime } from "./runtimes/node-runtime.ts";
-import type { Runtime } from "./runtimes/runtime.ts";
 
 const ALL_RUNTIMES: Runtime[] = [
   new NodeRuntime(),

@@ -3,9 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import { ask } from "../utils/ask.ts";
-import { exists } from "../utils/exists.ts";
 import { Detector } from "./detector.ts";
+import { ask } from "./utils/ask.ts";
+import { exists } from "./utils/exists.ts";
 
 export abstract class Runtime {
   abstract readonly name: string;

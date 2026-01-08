@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import decompress from "decompress";
+import { Runtime } from "../runtime.ts";
 import { download } from "../utils/download.ts";
-import { Runtime } from "./runtime.ts";
 
 export class DenoRuntime extends Runtime {
   private readonly DENO_DIST_MIRROR = "https://dl.deno.land";
