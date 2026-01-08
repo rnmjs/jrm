@@ -168,20 +168,26 @@ export abstract class Runtime {
     }
 
     // 4. Use remote version.
+    const installAnswer = await ask(
+      `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
+    );
+    if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
+      return undefined;
+    }
     const remoteVersions = await this.getRemoteVersions();
     const targetVersion = remoteVersions.find((remoteVersion) =>
       semver.satisfies(remoteVersion, versionRange),
     );
     if (targetVersion) {
-      const answer = await ask(
-        `${this.name}@${targetVersion} (satisfies ${versionRange}) is not installed. Do you want to install it? (y/N): `,
-      );
-      if (["y", "yes"].includes(answer.toLowerCase())) {
-        await this.install(targetVersion);
-        await this.createVersionSymlink(targetVersion, multishellPath);
-        return targetVersion;
-      }
-      return undefined;
+      // const continueAnswer = await ask(
+      //   `About to install ${this.name}@${targetVersion} (satisfies ${versionRange}). Do you want to continue? (y/N): `,
+      // );
+      // if (!["y", "yes"].includes(continueAnswer.toLowerCase())) {
+      //   return undefined;
+      // }
+      await this.install(targetVersion);
+      await this.createVersionSymlink(targetVersion, multishellPath);
+      return targetVersion;
     }
 
     throw new Error(`No remote version satisfies ${versionRange}.`);
