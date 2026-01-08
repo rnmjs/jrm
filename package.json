@@ -1,6 +1,6 @@
 {
   "name": "jrm",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "description": "JavaScript Runtime Version Manager for Node.js, Bun, and Deno.",
   "type": "module",

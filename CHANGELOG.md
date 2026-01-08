@@ -1,5 +1,12 @@
 # jrm
 
+## 0.0.8
+
+### Patch Changes
+
+- b652400: feat: ask user whether to install before fetching remote versions
+- f2ddbd0: feat: print more msg for `list` command
+
 ## 0.0.7
 
 ### Patch Changes
