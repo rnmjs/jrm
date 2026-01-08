@@ -21,7 +21,7 @@ declare -A platforms=(
 
 if [ -n "$CI" ]; then
   # In CI: install deno as before
-  curl -fsSL https://deno.land/install.sh | sh # TODO: Not specify a version. Optimize it.
+  curl -fsSL https://deno.land/install.sh | sh -s v2.6.3
   DENO_CMD="$HOME/.deno/bin/deno"
 else
   # Not in CI: check if deno command exists

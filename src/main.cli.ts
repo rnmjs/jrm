@@ -75,7 +75,7 @@ program
 program
   .command("alias")
   .description("create an alias for a specific runtime version")
-  .argument("<runtime>", "runtime name (e.g., node, deno, bun)")
+  .argument("<runtime>", "runtime name (e.g., node)")
   .requiredOption("--name <name>", "alias name")
   .requiredOption("--version <version>", "runtime version")
   .action(

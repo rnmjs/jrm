@@ -50,10 +50,14 @@ After adding this line, restart your terminal or run `source ~/.bashrc` (or `sou
 
 ```bash
 # Set specific Node.js version
-jrm use node@20
+jrm use node@18
+node --version # -> 18.20.8
 
 # Set multiple runtime versions
-jrm use node@20.0.0 deno@2.0.0
+jrm use node@22.21.1 bun@1.3.5 deno@2.6.3
+node --version # -> 22.21.1
+bun --version # -> 1.3.5
+deno --version # -> 2.6.3
 ```
 
 ### Project Configuration
@@ -62,14 +66,14 @@ JRM can automatically detect runtime versions from your project configuration:
 
 ```bash
 echo "22.21.1" > .node-version
-echo "2.6.3" > .deno-version
 echo "1.3.5" > .bun-version
+echo "2.6.3" > .deno-version
 
 jrm use
 
 node --version # -> 22.21.1
-deno --version # -> 2.6.3
 bun --version # -> 1.3.5
+deno --version # -> 2.6.3
 ```
 
 Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `package.json`:
@@ -85,7 +89,7 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
 }
 ```
 
-## See Also
+## 👀 See Also
 
 - [fnm](https://github.com/Schniz/fnm) - 🚀 Fast and simple Node.js version manager, built in Rust. (JRM is inspired by this project)
 - [@rnm/pm](https://github.com/rnmjs/pm) - 📦 Unified Package Manager for Node.js (npm, yarn, pnpm)
@@ -108,6 +112,10 @@ pnpm test
 # Build the project
 pnpm build
 ```
+
+## ⭐️ Show Your Support
+
+If this project helps you, please give it a ⭐️!
 
 ## 📄 License
 
