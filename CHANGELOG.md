@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.1
+
+### Patch Changes
+
+- 9e5bcc0: fix: avoid crash when unalias is called because of Deno
+
 ## 0.1.0
 
 ### Minor Changes
