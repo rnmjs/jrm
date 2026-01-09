@@ -1,5 +1,16 @@
 # jrm
 
+## 0.1.0
+
+### Minor Changes
+
+- 310f150: chore: bump to `0.1.0`
+
+### Patch Changes
+
+- ceed48b: feat: support `unalias` command
+- 9b5d405: feat: support `jrm use node@some-alias`
+
 ## 0.0.8
 
 ### Patch Changes
