@@ -251,4 +251,16 @@ export abstract class Runtime {
     // JRM will create the default alias once the first version is installed.
     await this.createVersionSymlink(version, aliasPath);
   }
+
+  async unalias(aliasName: string): Promise<void> {
+    if (aliasName === "default") {
+      throw new Error("'default' alias is reserved. Cannot remove it.");
+    }
+
+    const aliasPath = path.join(this.getAliasesDir(), aliasName);
+    if (!(await exists(aliasPath))) {
+      return;
+    }
+    await fs.rm(aliasPath);
+  }
 }

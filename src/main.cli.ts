@@ -6,6 +6,7 @@ import { aliasCommand } from "./commands/alias-command.ts";
 import { envCommand } from "./commands/env-command.ts";
 import { installCommand } from "./commands/install-command.ts";
 import { listCommand } from "./commands/list-command.ts";
+import { unaliasCommand } from "./commands/unalias-command.ts";
 import { useCommand } from "./commands/use-command.ts";
 
 /**
@@ -87,5 +88,17 @@ program
       });
     },
   );
+
+program
+  .command("unalias")
+  .description("remove an alias for a runtime")
+  .argument("<runtime>", "runtime name (e.g., node)")
+  .requiredOption("--name <name>", "alias name to remove")
+  .action(async (runtime: string, options: { name: string }) => {
+    await unaliasCommand({
+      runtime,
+      name: options.name,
+    });
+  });
 
 program.parse();
