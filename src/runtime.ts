@@ -213,6 +213,9 @@ export abstract class Runtime {
     return {
       [`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`]:
         this.getMultishellPath(),
+      // If we don't add this env variable, when user switch to other version, the installed npm packages under the default alias will not be found.
+      [`JRM_DEFAULT_ALIAS_PATH_OF_${this.name.toUpperCase()}`]:
+        this.getDefaultAliasPath(),
     };
   }
 
