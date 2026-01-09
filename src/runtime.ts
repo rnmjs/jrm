@@ -108,7 +108,7 @@ export abstract class Runtime {
     return true;
   }
 
-  async use(version?: string): Promise<string | undefined> {
+  async use(versionOrAlias?: string): Promise<string | undefined> {
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     if (!multishellPath) {
@@ -143,10 +143,26 @@ export abstract class Runtime {
       }
     }
 
+    let versionRange: string | undefined = undefined;
+    if (!versionOrAlias) {
+      // handle auto-detect
+      versionRange = await new Detector(this.name).detectVersionRange(
+        process.cwd(),
+      );
+    } else if (semver.validRange(versionOrAlias)) {
+      // handle version range
+      versionRange = versionOrAlias;
+    } else {
+      // handle alias
+      if (!(await exists(path.join(this.getAliasesDir(), versionOrAlias)))) {
+        throw new Error(`No alias named ${versionOrAlias} found.`);
+      }
+      versionRange = await this.getVersionBySymlink(
+        path.join(this.getAliasesDir(), versionOrAlias),
+      );
+    }
+
     // 1. No version range, do nothing.
-    const versionRange =
-      version ??
-      (await new Detector(this.name).detectVersionRange(process.cwd()));
     if (!versionRange) {
       return undefined;
     }
@@ -234,6 +250,11 @@ export abstract class Runtime {
     if (!semver.valid(version)) {
       throw new Error(
         `Invalid version: ${version}. Expected a valid semver (e.g., 20.0.0).`,
+      );
+    }
+    if (semver.validRange(aliasName)) {
+      throw new Error(
+        `Invalid alias name: ${aliasName}. Alias name cannot be a valid semver or a valid semver range.`,
       );
     }
 

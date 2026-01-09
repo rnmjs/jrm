@@ -12,7 +12,7 @@ import { useCommand } from "./commands/use-command.ts";
 /**
  * Parse runtime specifications from command line arguments
  * @param runtimeSpecs Array of runtime specifications (e.g., ["node@20.0.0", "deno@2.0.0"])
- * @returns Array of parsed runtime objects with runtime name and version
+ * @returns Array of parsed runtime objects with runtime name and versionOrAlias
  */
 function parseRuntimeSpecs(runtimeSpecs: string[]) {
   return runtimeSpecs.map((runtimeSpec) => {
@@ -22,7 +22,7 @@ function parseRuntimeSpecs(runtimeSpecs: string[]) {
         `Invalid runtime specification: ${runtimeSpec}. Expected format: runtime@version (e.g., node@20.0.0)`,
       );
     }
-    return { runtime: match[1], version: match[2] };
+    return { runtime: match[1], versionOrAlias: match[2] };
   });
 }
 
@@ -48,7 +48,12 @@ program
     "runtime specifications (e.g., node@20 deno@2.0.0)",
   )
   .action(async (runtimeSpecs: string[]) => {
-    await installCommand(parseRuntimeSpecs(runtimeSpecs));
+    await installCommand(
+      parseRuntimeSpecs(runtimeSpecs).map((spec) => ({
+        runtime: spec.runtime,
+        version: spec.versionOrAlias,
+      })),
+    );
   });
 
 program
@@ -67,7 +72,7 @@ program
   .description("use specified runtime versions or auto-detect from project")
   .argument(
     "[runtimes...]",
-    "runtime specifications (e.g., node@20 deno@2.0.0)",
+    "runtime specifications (e.g., node@20 bun@some-alias deno@2.0.0)",
   )
   .action(async (runtimeSpecs: string[]) => {
     await useCommand(parseRuntimeSpecs(runtimeSpecs));
