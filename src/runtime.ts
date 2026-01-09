@@ -285,6 +285,7 @@ export abstract class Runtime {
     if (!(await exists(aliasPath))) {
       return;
     }
-    await fs.rm(aliasPath);
+    // If not recursive, Deno will throw an error when the alias is a symlink, but Node.js will not.
+    await fs.rm(aliasPath, { recursive: true });
   }
 }
