@@ -7,6 +7,13 @@ import { Detector } from "./detector.ts";
 import { ask } from "./utils/ask.ts";
 import { exists } from "./utils/exists.ts";
 
+export interface RuntimeOptions {
+  /**
+   * Home directory of JRM.
+   */
+  home?: string;
+}
+
 export abstract class Runtime {
   abstract readonly name: string;
   /**
@@ -15,7 +22,11 @@ export abstract class Runtime {
   protected abstract readonly bundledBinaries: string[];
   protected readonly platform = os.platform();
   protected readonly arch = os.arch();
-  private readonly home = path.join(os.homedir(), ".jrm");
+  private readonly home: string;
+
+  constructor(options: RuntimeOptions = {}) {
+    this.home = options.home ?? path.join(os.homedir(), ".jrm");
+  }
 
   private getVersionsDir() {
     return path.join(this.home, this.name, "versions");
@@ -221,13 +232,11 @@ export abstract class Runtime {
 
   async list() {
     const promises = (
-      await fs
-        .readdir(this.getAliasesDir(), { withFileTypes: true })
-        .catch(() => [])
-    ).map(async (alias) => ({
-      name: alias.name,
+      await fs.readdir(this.getAliasesDir()).catch(() => [])
+    ).map(async (name) => ({
+      name,
       version: await this.getVersionBySymlink(
-        path.join(alias.parentPath, alias.name),
+        path.join(this.getAliasesDir(), name),
       ),
     }));
     const aliases = await Promise.all(promises);
