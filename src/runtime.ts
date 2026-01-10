@@ -221,13 +221,11 @@ export abstract class Runtime {
 
   async list() {
     const promises = (
-      await fs
-        .readdir(this.getAliasesDir(), { withFileTypes: true })
-        .catch(() => [])
-    ).map(async (alias) => ({
-      name: alias.name,
+      await fs.readdir(this.getAliasesDir()).catch(() => [])
+    ).map(async (name) => ({
+      name,
       version: await this.getVersionBySymlink(
-        path.join(alias.parentPath, alias.name),
+        path.join(this.getAliasesDir(), name),
       ),
     }));
     const aliases = await Promise.all(promises);
