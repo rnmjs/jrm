@@ -54,7 +54,7 @@ describe("Runtime", () => {
   const mockArch = "x64";
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
 
     // Setup os mocks
     vi.mocked(os.homedir).mockReturnValue(mockHomedir);
@@ -248,6 +248,13 @@ describe("Runtime", () => {
       const result = await runtime.use("my-alias");
 
       expect(result).toBe("2.0.0");
+    });
+
+    it("should throw error if alias does not exist", async () => {
+      const runtime = new TestRuntime();
+      await expect(runtime.use("nonexistent-alias")).rejects.toThrow(
+        "No alias named nonexistent-alias found.",
+      );
     });
 
     it("should prompt to install if no installed version satisfies range", async () => {
