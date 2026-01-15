@@ -119,7 +119,7 @@ export abstract class Runtime {
     return true;
   }
 
-  async use(versionOrAlias?: string): Promise<string | undefined> {
+  async use(versionRangeOrAlias?: string): Promise<string | undefined> {
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     if (!multishellPath) {
@@ -155,21 +155,23 @@ export abstract class Runtime {
     }
 
     let versionRange: string | undefined = undefined;
-    if (!versionOrAlias) {
+    if (!versionRangeOrAlias) {
       // handle auto-detect
       versionRange = await new Detector(this.name).detectVersionRange(
         process.cwd(),
       );
-    } else if (semver.validRange(versionOrAlias)) {
+    } else if (semver.validRange(versionRangeOrAlias)) {
       // handle version range
-      versionRange = versionOrAlias;
+      versionRange = versionRangeOrAlias;
     } else {
       // handle alias
-      if (!(await exists(path.join(this.getAliasesDir(), versionOrAlias)))) {
-        throw new Error(`No alias named ${versionOrAlias} found.`);
+      if (
+        !(await exists(path.join(this.getAliasesDir(), versionRangeOrAlias)))
+      ) {
+        throw new Error(`No alias named ${versionRangeOrAlias} found.`);
       }
       versionRange = await this.getVersionBySymlink(
-        path.join(this.getAliasesDir(), versionOrAlias),
+        path.join(this.getAliasesDir(), versionRangeOrAlias),
       );
     }
 

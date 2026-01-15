@@ -1,23 +1,25 @@
 import process from "node:process";
 import { getAllRuntimes, getRuntime } from "../common.ts";
-import type { Runtime } from "../runtime.ts";
 
 export interface UseCommandOptions {
   runtime: string;
-  versionOrAlias: string;
+  versionRangeOrAlias: string;
 }
 
 export async function useCommand(options: UseCommandOptions[]): Promise<void> {
-  const items: { runtime: Runtime; versionOrAlias?: string }[] =
+  const items =
     options.length === 0
-      ? getAllRuntimes().map((runtime) => ({ runtime }))
+      ? getAllRuntimes().map((runtime) => ({
+          runtime,
+          versionRangeOrAlias: undefined,
+        }))
       : options.map((option) => ({
           runtime: getRuntime(option.runtime),
-          versionOrAlias: option.versionOrAlias,
+          versionRangeOrAlias: option.versionRangeOrAlias,
         }));
 
-  for (const { runtime, versionOrAlias } of items) {
-    const usingVersion = await runtime.use(versionOrAlias);
+  for (const { runtime, versionRangeOrAlias } of items) {
+    const usingVersion = await runtime.use(versionRangeOrAlias);
     if (usingVersion) {
       process.stdout.write(`Using ${runtime.name}@${usingVersion}\n`);
     }

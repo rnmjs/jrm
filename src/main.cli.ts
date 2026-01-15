@@ -22,7 +22,7 @@ function parseRuntimeSpecs(runtimeSpecs: string[]) {
         `Invalid runtime specification: ${runtimeSpec}. Expected format: runtime@version (e.g., node@20.0.0)`,
       );
     }
-    return { runtime: match[1], versionOrAlias: match[2] };
+    return { runtime: match[1], versionRangeOrAlias: match[2] };
   });
 }
 
@@ -51,7 +51,7 @@ program
     await installCommand(
       parseRuntimeSpecs(runtimeSpecs).map((spec) => ({
         runtime: spec.runtime,
-        version: spec.versionOrAlias,
+        versionRange: spec.versionRangeOrAlias,
       })),
     );
   });
