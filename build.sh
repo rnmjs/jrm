@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e  # Exit on any error
 
+# Inspired by https://github.com/evanw/esbuild/issues/1921#issuecomment-1623640043
+# Also a good solution: https://github.com/evanw/esbuild/issues/1921#issuecomment-1898197331
 pnpm esbuild src/main.cli.ts \
   --bundle \
   --platform=node \
@@ -8,7 +10,7 @@ pnpm esbuild src/main.cli.ts \
   --format=esm \
   --outfile=dist/jrm.js \
   --minify \
-  --banner:js="const require = (await import('node:module')).createRequire(import.meta.url);"
+  --banner:js="globalThis.require ??= (await import('node:module')).createRequire(import.meta.url);"
 
 mkdir -p assets
 
