@@ -37,10 +37,7 @@ jrm --version
 Add JRM to your shell profile. This step is required for JRM to work properly:
 
 ```bash
-# For bash users (~/.bashrc)
-eval "$(jrm env)"
-
-# For zsh users (~/.zshrc)
+# Add this line to the end of ~/.bashrc or ~/.zshrc
 eval "$(jrm env)"
 ```
 
