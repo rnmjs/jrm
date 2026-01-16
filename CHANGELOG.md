@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.2
+
+### Patch Changes
+
+- ab50459: refactor: optimize code. no significant changes
+
 ## 0.1.1
 
 ### Patch Changes
