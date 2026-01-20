@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import { Detector } from "./detector.ts";
+import { Detector, type VersionDetectResult } from "./detector.ts";
 import { ask } from "./utils/ask.ts";
 import { exists } from "./utils/exists.ts";
 
@@ -154,12 +154,15 @@ export abstract class Runtime {
       }
     }
 
+    let onFail: Required<VersionDetectResult>["onFail"] = "error";
     let versionRange: string | undefined = undefined;
     if (!versionRangeOrAlias) {
       // handle auto-detect
-      versionRange = await new Detector(this.name).detectVersionRange(
+      const detected = await new Detector(this.name).detectVersionRange(
         process.cwd(),
       );
+      if (detected?.versionRange) versionRange = detected.versionRange;
+      if (detected?.onFail) onFail = detected.onFail;
     } else if (semver.validRange(versionRangeOrAlias)) {
       // handle version range
       versionRange = versionRangeOrAlias;
@@ -197,29 +200,34 @@ export abstract class Runtime {
     }
 
     // 4. Use remote version.
-    const installAnswer = await ask(
-      `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
-    );
-    if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
-      return undefined;
+    switch (onFail) {
+      case "ignore":
+        return undefined;
+      case "warn":
+        process.stderr.write(
+          `No installed ${this.name} version satisfies ${versionRange}. Run \`jrm install ${this.name}@${versionRange}\` to install it.\n`,
+        );
+        return undefined;
+      case "error":
+      case "download": {
+        const installAnswer = await ask(
+          `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
+        );
+        if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
+          return undefined;
+        }
+        const remoteVersions = await this.getRemoteVersions();
+        const targetVersion = remoteVersions.find((remoteVersion) =>
+          semver.satisfies(remoteVersion, versionRange),
+        );
+        if (targetVersion) {
+          await this.install(targetVersion);
+          await this.createVersionSymlink(targetVersion, multishellPath);
+          return targetVersion;
+        }
+        throw new Error(`No remote version satisfies ${versionRange}.`);
+      }
     }
-    const remoteVersions = await this.getRemoteVersions();
-    const targetVersion = remoteVersions.find((remoteVersion) =>
-      semver.satisfies(remoteVersion, versionRange),
-    );
-    if (targetVersion) {
-      // const continueAnswer = await ask(
-      //   `About to install ${this.name}@${targetVersion} (satisfies ${versionRange}). Do you want to continue? (y/N): `,
-      // );
-      // if (!["y", "yes"].includes(continueAnswer.toLowerCase())) {
-      //   return undefined;
-      // }
-      await this.install(targetVersion);
-      await this.createVersionSymlink(targetVersion, multishellPath);
-      return targetVersion;
-    }
-
-    throw new Error(`No remote version satisfies ${versionRange}.`);
   }
 
   env() {

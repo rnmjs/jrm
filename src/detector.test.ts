@@ -23,9 +23,9 @@ describe("Detector", () => {
     );
     vi.mocked(fs.readFile).mockResolvedValue("18.0.0\n");
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBe("18.0.0");
+    expect(result).toEqual({ versionRange: "18.0.0" });
   });
 
   it("should detect version from package.json with single runtime", async () => {
@@ -46,9 +46,9 @@ describe("Detector", () => {
       }),
     );
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBe(">=16.0.0");
+    expect(result).toEqual({ versionRange: ">=16.0.0", onFail: undefined });
   });
 
   it("should detect version from package.json with multiple runtimes", async () => {
@@ -75,9 +75,9 @@ describe("Detector", () => {
       }),
     );
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBe(">=18.0.0");
+    expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
   });
 
   it("should prioritize .{name}-version file over package.json", async () => {
@@ -98,9 +98,9 @@ describe("Detector", () => {
       });
     });
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBe("20.0.0");
+    expect(result).toEqual({ versionRange: "20.0.0" });
   });
 
   it("should search parent directories when no version file found", async () => {
@@ -114,9 +114,9 @@ describe("Detector", () => {
 
     vi.mocked(fs.readFile).mockResolvedValue("18.0.0");
 
-    const version = await detector.detectVersionRange("/test/dir/sub/nested");
+    const result = await detector.detectVersionRange("/test/dir/sub/nested");
 
-    expect(version).toBe("18.0.0");
+    expect(result).toEqual({ versionRange: "18.0.0" });
   });
 
   it("should return undefined when no version file found in any parent directory", async () => {
@@ -177,9 +177,9 @@ describe("Detector", () => {
     );
     vi.mocked(fs.readFile).mockResolvedValue("  18.0.0  \n");
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBe("18.0.0");
+    expect(result).toEqual({ versionRange: "18.0.0" });
   });
 
   it("should work with different runtime names", async () => {
@@ -191,9 +191,88 @@ describe("Detector", () => {
     );
     vi.mocked(fs.readFile).mockResolvedValue("1.0.0");
 
-    const version = await bunDetector.detectVersionRange("/test/dir");
+    const result = await bunDetector.detectVersionRange("/test/dir");
 
-    expect(version).toBe("1.0.0");
+    expect(result).toEqual({ versionRange: "1.0.0" });
+  });
+
+  it("should detect onFail from package.json", async () => {
+    const detector = new Detector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("package.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "test-package",
+        devEngines: {
+          runtime: {
+            name: "node",
+            version: ">=16.0.0",
+            onFail: "warn",
+          },
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=16.0.0", onFail: "warn" });
+  });
+
+  it("should detect onFail with multiple runtimes", async () => {
+    const detector = new Detector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("package.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "test-package",
+        devEngines: {
+          runtime: [
+            {
+              name: "bun",
+              version: ">=1.0.0",
+              onFail: "error",
+            },
+            {
+              name: "node",
+              version: ">=18.0.0",
+              onFail: "ignore",
+            },
+          ],
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=18.0.0", onFail: "ignore" });
+  });
+
+  it("should detect onFail as download", async () => {
+    const detector = new Detector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("package.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "test-package",
+        devEngines: {
+          runtime: {
+            name: "node",
+            version: ">=20.0.0",
+            onFail: "download",
+          },
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=20.0.0", onFail: "download" });
   });
 
   it("should handle invalid JSON in package.json gracefully", async () => {

@@ -16,6 +16,9 @@ vi.mock("node:process", () => ({
     cwd: vi.fn(),
     ppid: 12345,
     env: {},
+    stderr: {
+      write: vi.fn(),
+    },
   },
 }));
 vi.mock("./detector.ts");
@@ -201,6 +204,89 @@ describe("Runtime", () => {
       const result = await runtime.use();
 
       expect(result).toBeUndefined();
+    });
+
+    it("should return undefined when onFail is ignore", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.realpath).mockResolvedValue(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
+      );
+      vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "ignore",
+      });
+
+      const result = await runtime.use();
+
+      expect(result).toBeUndefined();
+      expect(ask).not.toHaveBeenCalled();
+    });
+
+    it("should print warning and return undefined when onFail is warn", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.realpath).mockResolvedValue(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
+      );
+      vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "warn",
+      });
+
+      const result = await runtime.use();
+
+      expect(result).toBeUndefined();
+      expect(ask).not.toHaveBeenCalled();
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        "No installed testruntime version satisfies ^3.0.0. Run `jrm install testruntime@^3.0.0` to install it.\n",
+      );
+    });
+
+    it("should prompt to install when onFail is error", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.realpath).mockResolvedValue(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
+      );
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["v1.0.0"] as any)
+        .mockResolvedValueOnce(["v1.0.0"] as any)
+        .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "error",
+      });
+      vi.mocked(ask).mockResolvedValue("y");
+
+      const result = await runtime.use();
+
+      expect(ask).toHaveBeenCalled();
+      expect(result).toBe("3.0.0");
+    });
+
+    it("should prompt to install when onFail is download", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.realpath).mockResolvedValue(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
+      );
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["v1.0.0"] as any)
+        .mockResolvedValueOnce(["v1.0.0"] as any)
+        .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "download",
+      });
+      vi.mocked(ask).mockResolvedValue("y");
+
+      const result = await runtime.use();
+
+      expect(ask).toHaveBeenCalled();
+      expect(result).toBe("3.0.0");
     });
 
     it("should use default version if it satisfies range", async () => {
