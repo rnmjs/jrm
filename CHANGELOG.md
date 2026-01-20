@@ -1,5 +1,12 @@
 # jrm
 
+## 0.1.3
+
+### Patch Changes
+
+- 3372273: feat: support `uninstall` command, close #15
+- 67a76cb: feat: support macos x64
+
 ## 0.1.2
 
 ### Patch Changes
