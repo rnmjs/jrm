@@ -449,6 +449,94 @@ describe("Runtime", () => {
     });
   });
 
+  describe("uninstall", () => {
+    it("should uninstall an installed version", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(true);
+      expect(fs.rm).toHaveBeenCalledWith(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+        { recursive: true },
+      );
+    });
+
+    it("should return false if version is not installed", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(false);
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(false);
+      expect(fs.rm).not.toHaveBeenCalled();
+    });
+
+    it("should throw error for invalid version", async () => {
+      const runtime = new TestRuntime();
+
+      await expect(runtime.uninstall("invalid")).rejects.toThrow(
+        "Invalid version: invalid. Expected a valid semver (e.g., 20.0.0).",
+      );
+    });
+
+    it("should remove aliases pointing to the uninstalled version", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.readdir).mockResolvedValue(["default", "my-alias"] as any);
+      vi.mocked(fs.realpath)
+        .mockResolvedValueOnce(
+          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+        )
+        .mockResolvedValueOnce(
+          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+        );
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(true);
+      expect(fs.rm).toHaveBeenCalledWith(
+        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "default"),
+        { recursive: true },
+      );
+      expect(fs.rm).toHaveBeenCalledWith(
+        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "my-alias"),
+        { recursive: true },
+      );
+      expect(fs.rm).toHaveBeenCalledWith(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+        { recursive: true },
+      );
+    });
+
+    it("should not remove aliases pointing to other versions", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists).mockResolvedValue(true);
+      vi.mocked(fs.readdir).mockResolvedValue([
+        "default",
+        "other-alias",
+      ] as any);
+      vi.mocked(fs.realpath)
+        .mockResolvedValueOnce(
+          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
+        )
+        .mockResolvedValueOnce(
+          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v3.0.0"),
+        );
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(true);
+      expect(fs.rm).toHaveBeenCalledTimes(1);
+      expect(fs.rm).toHaveBeenCalledWith(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+        { recursive: true },
+      );
+    });
+  });
+
   describe("getRemoteVersions", () => {
     it("should filter out prerelease versions", async () => {
       const runtime = new TestRuntime();

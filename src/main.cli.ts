@@ -7,6 +7,7 @@ import { envCommand } from "./commands/env-command.ts";
 import { installCommand } from "./commands/install-command.ts";
 import { listCommand } from "./commands/list-command.ts";
 import { unaliasCommand } from "./commands/unalias-command.ts";
+import { uninstallCommand } from "./commands/uninstall-command.ts";
 import { useCommand } from "./commands/use-command.ts";
 
 /**
@@ -104,6 +105,22 @@ program
       runtime,
       name: options.name,
     });
+  });
+
+program
+  .command("uninstall")
+  .description("uninstall specified runtime versions")
+  .argument(
+    "<runtimes...>",
+    "runtime specifications (e.g., node@20.0.0 deno@2.0.0)",
+  )
+  .action(async (runtimeSpecs: string[]) => {
+    await uninstallCommand(
+      parseRuntimeSpecs(runtimeSpecs).map((spec) => ({
+        runtime: spec.runtime,
+        version: spec.versionRangeOrAlias,
+      })),
+    );
   });
 
 program.parse();

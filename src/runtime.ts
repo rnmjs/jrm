@@ -287,6 +287,40 @@ export abstract class Runtime {
     await this.createVersionSymlink(version, aliasPath);
   }
 
+  async uninstall(version: string): Promise<boolean> {
+    // Validate that version is a valid semver
+    if (!semver.valid(version)) {
+      throw new Error(
+        `Invalid version: ${version}. Expected a valid semver (e.g., 20.0.0).`,
+      );
+    }
+
+    const versionPath = path.join(this.getVersionsDir(), `v${version}`);
+
+    // Check if the version is installed
+    if (!(await exists(versionPath))) {
+      return false;
+    }
+
+    // Find and remove all aliases pointing to this version
+    const aliasesDir = this.getAliasesDir();
+    const aliasNames = await fs.readdir(aliasesDir).catch(() => []);
+    for (const aliasName of aliasNames) {
+      const aliasPath = path.join(aliasesDir, aliasName);
+      const aliasVersion = await this.getVersionBySymlink(aliasPath).catch(
+        () => undefined,
+      );
+      if (aliasVersion === version) {
+        await fs.rm(aliasPath, { recursive: true });
+      }
+    }
+
+    // Remove the version directory
+    await fs.rm(versionPath, { recursive: true });
+
+    return true;
+  }
+
   async unalias(aliasName: string): Promise<void> {
     if (aliasName === "default") {
       throw new Error("'default' alias is reserved. Cannot remove it.");
