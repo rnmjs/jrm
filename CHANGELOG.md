@@ -1,5 +1,12 @@
 # jrm
 
+## 0.1.4
+
+### Patch Changes
+
+- eef022e: fix: add `default` alias back if the default version is uninstalled
+- 8cc91dc: feat: add support for `devEngines.runtime.onFail` field in package.json
+
 ## 0.1.3
 
 ### Patch Changes
