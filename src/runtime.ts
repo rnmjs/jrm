@@ -318,6 +318,16 @@ export abstract class Runtime {
     // Remove the version directory
     await fs.rm(versionPath, { recursive: true });
 
+    // If default alias no longer exists and there are other installed versions, set default alias to the first available version
+    const defaultAliasPath = this.getDefaultAliasPath();
+    if (!(await exists(defaultAliasPath))) {
+      const remainingVersions = await this.getInstalledVersions();
+      const firstVersion = remainingVersions[0];
+      if (firstVersion) {
+        await this.createVersionSymlink(firstVersion, defaultAliasPath);
+      }
+    }
+
     return true;
   }
 

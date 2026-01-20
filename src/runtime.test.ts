@@ -513,11 +513,12 @@ describe("Runtime", () => {
 
     it("should not remove aliases pointing to other versions", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        "default",
-        "other-alias",
-      ] as any);
+      vi.mocked(exists)
+        .mockResolvedValueOnce(true) // version exists
+        .mockResolvedValueOnce(true); // default alias exists after uninstall
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["default", "other-alias"] as any) // aliases
+        .mockResolvedValueOnce(["v1.0.0", "v3.0.0"] as any); // remaining versions
       vi.mocked(fs.realpath)
         .mockResolvedValueOnce(
           path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
@@ -534,6 +535,46 @@ describe("Runtime", () => {
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
         { recursive: true },
       );
+    });
+
+    it("should set default alias to first remaining version when default is removed", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists)
+        .mockResolvedValueOnce(true) // version exists
+        .mockResolvedValueOnce(false); // default alias does not exist after removal
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["default"] as any) // aliases pointing to version being uninstalled
+        .mockResolvedValueOnce(["v1.0.0", "v3.0.0"] as any); // remaining versions (will be sorted by semver descending)
+      vi.mocked(fs.realpath).mockResolvedValueOnce(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+      );
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(true);
+      // getInstalledVersions sorts by semver descending, so v3.0.0 comes first
+      expect(fs.symlink).toHaveBeenCalledWith(
+        "../versions/v3.0.0",
+        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "default"),
+      );
+    });
+
+    it("should not set default alias when no remaining versions", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(exists)
+        .mockResolvedValueOnce(true) // version exists
+        .mockResolvedValueOnce(false); // default alias does not exist after removal
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["default"] as any) // aliases
+        .mockResolvedValueOnce([] as any); // no remaining versions
+      vi.mocked(fs.realpath).mockResolvedValueOnce(
+        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
+      );
+
+      const result = await runtime.uninstall("2.0.0");
+
+      expect(result).toBe(true);
+      expect(fs.symlink).not.toHaveBeenCalled();
     });
   });
 
