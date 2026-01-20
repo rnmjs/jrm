@@ -15,7 +15,7 @@ pnpm esbuild src/main.cli.ts \
 mkdir -p assets
 
 declare -A platforms=(
-  # ["x86_64-apple-darwin"]="jrm-Darwin-x86_64"
+  ["x86_64-apple-darwin"]="jrm-Darwin-x86_64"
   ["aarch64-apple-darwin"]="jrm-Darwin-arm64"
   ["x86_64-unknown-linux-gnu"]="jrm-Linux-x86_64"
   ["aarch64-unknown-linux-gnu"]="jrm-Linux-aarch64"
@@ -23,7 +23,7 @@ declare -A platforms=(
 
 if [ -n "$CI" ]; then
   # In CI: install deno as before
-  curl -fsSL https://deno.land/install.sh | sh -s v2.6.3
+  curl -fsSL https://deno.land/install.sh | sh -s v2.6.5
   DENO_CMD="$HOME/.deno/bin/deno"
 else
   # Not in CI: check if deno command exists

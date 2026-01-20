@@ -38,8 +38,7 @@ export class DenoRuntime extends Runtime {
     const allTags: Array<{ name: string }> = [];
     const perPage = 100;
 
-    // eslint-disable-next-line @fenge/no-restricted-loops -- allow it
-    for (let page = 1; ; page += 1) {
+    for (let page = 1; true; page += 1) {
       const response = await fetch(
         `${this.GITHUB_API_URL}/repos/denoland/deno/tags?per_page=${perPage}&page=${page}`,
       );
