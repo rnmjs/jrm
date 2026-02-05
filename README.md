@@ -73,6 +73,8 @@ bun --version # -> 1.3.5
 deno --version # -> 2.6.3
 ```
 
+> JRM will automatically run `jrm use` when you `cd` into the directory. That means, when you `cd` into the directory, JRM will automatically set the runtime versions for you.
+
 Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `package.json`:
 
 ```json
@@ -85,6 +87,12 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
   }
 }
 ```
+
+## 🗑️ Uninstallation
+
+1. **Remove JRM directory**: `rm -rf ~/.jrm`
+2. **Edit shell profile**: Remove `eval "$(jrm env)"` from `~/.bashrc` or `~/.zshrc`
+3. **Restart terminal**: Run `source ~/.bashrc` or `source ~/.zshrc`
 
 ## 👀 See Also
 
