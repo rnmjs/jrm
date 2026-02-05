@@ -73,6 +73,8 @@ bun --version # -> 1.3.5
 deno --version # -> 2.6.3
 ```
 
+> JRM will automatically run `jrm use` when you `cd` into the directory. That means, when you `cd` into the directory, JRM will automatically set the runtime versions for you.
+
 Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `package.json`:
 
 ```json
