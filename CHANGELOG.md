@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.5
+
+### Patch Changes
+
+- 49f7eec: chore: print the using log in one line
+
 ## 0.1.4
 
 ### Patch Changes
