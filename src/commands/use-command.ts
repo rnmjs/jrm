@@ -18,10 +18,16 @@ export async function useCommand(options: UseCommandOptions[]): Promise<void> {
           versionRangeOrAlias: option.versionRangeOrAlias,
         }));
 
+  const usingRuntimes = new Map<string, string>();
   for (const { runtime, versionRangeOrAlias } of items) {
     const usingVersion = await runtime.use(versionRangeOrAlias);
     if (usingVersion) {
-      process.stdout.write(`Using ${runtime.name}@${usingVersion}\n`);
+      usingRuntimes.set(runtime.name, usingVersion);
     }
+  }
+  if (usingRuntimes.size > 0) {
+    process.stdout.write(
+      `Using ${[...usingRuntimes.entries()].map(([runtimeName, runtimeVersion]) => `${runtimeName}@${runtimeVersion}`).join(" ")}\n`,
+    );
   }
 }
