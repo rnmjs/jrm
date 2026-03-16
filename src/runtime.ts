@@ -28,6 +28,10 @@ export abstract class Runtime {
     this.home = options.home ?? path.join(os.homedir(), ".jrm");
   }
 
+  private getDownloadsDir() {
+    return path.join(this.home, this.name, "downloads");
+  }
+
   private getVersionsDir() {
     return path.join(this.home, this.name, "versions");
   }
@@ -84,6 +88,7 @@ export abstract class Runtime {
   protected abstract installRaw(
     version: string,
     installDir: string,
+    downloadDir: string,
   ): Promise<void>;
   async install(versionRange: string): Promise<boolean> {
     let version = semver.valid(versionRange);
@@ -98,13 +103,18 @@ export abstract class Runtime {
       version = targetVersion;
     }
     await fs.mkdir(this.getVersionsDir(), { recursive: true });
+    await fs.mkdir(this.getDownloadsDir(), { recursive: true });
 
     const installedVersions = await this.getInstalledVersions();
     if (installedVersions.includes(version)) {
       return false;
     }
 
-    await this.installRaw(version, this.getVersionsDir());
+    await this.installRaw(
+      version,
+      this.getVersionsDir(),
+      this.getDownloadsDir(),
+    );
 
     const updatedInstalledVersions = await this.getInstalledVersions();
     if (

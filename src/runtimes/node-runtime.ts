@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import decompress from "decompress";
@@ -24,11 +23,12 @@ export class NodeRuntime extends Runtime {
   protected override async installRaw(
     version: string,
     installDir: string,
+    downloadDir: string,
   ): Promise<void> {
     const filename = `node-v${version}-${this.platform}-${this.arch}.${this.platform === "win32" ? "zip" : "tar.gz"}`;
     const url = [this.NODE_DIST_MIRROR, `v${version}`, filename].join("/");
 
-    await download(url, os.tmpdir(), {
+    await download(url, downloadDir, {
       onProgress: (received, total) => {
         if (total) {
           process.stdout.write(
@@ -39,7 +39,7 @@ export class NodeRuntime extends Runtime {
     });
     process.stdout.write(`\rDownload ${url} completed\n`);
 
-    const downloadedPath = path.join(os.tmpdir(), filename);
+    const downloadedPath = path.join(downloadDir, filename);
     await decompress(downloadedPath, installDir);
     await fs.rename(
       path.join(installDir, `node-v${version}-${this.platform}-${this.arch}`),

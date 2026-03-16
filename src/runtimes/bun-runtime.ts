@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import decompress from "decompress";
@@ -62,12 +61,13 @@ export class BunRuntime extends Runtime {
   protected override async installRaw(
     version: string,
     installDir: string,
+    downloadDir: string,
   ): Promise<void> {
     const target = this.getTarget();
     const filename = `bun-${target}.zip`;
     const url = `${this.GITHUB_URL}/${this.GITHUB_REPO}/releases/download/bun-v${version}/${filename}`;
 
-    await download(url, os.tmpdir(), {
+    await download(url, downloadDir, {
       onProgress: (received, total) => {
         if (total) {
           process.stdout.write(
@@ -78,7 +78,7 @@ export class BunRuntime extends Runtime {
     });
     process.stdout.write(`\rDownload ${url} completed\n`);
 
-    const downloadedPath = path.join(os.tmpdir(), filename);
+    const downloadedPath = path.join(downloadDir, filename);
     const versionDir = path.join(installDir, `v${version}`);
 
     await fs.mkdir(versionDir, { recursive: true });

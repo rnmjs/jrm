@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import decompress from "decompress";
@@ -64,11 +63,12 @@ export class DenoRuntime extends Runtime {
   protected override async installRaw(
     version: string,
     installDir: string,
+    downloadDir: string,
   ): Promise<void> {
     const filename = `deno-${this.getTarget()}.zip`;
     const url = `${this.DENO_DIST_MIRROR}/release/v${version}/${filename}`;
 
-    await download(url, os.tmpdir(), {
+    await download(url, downloadDir, {
       onProgress: (received, total) => {
         if (total) {
           process.stdout.write(
@@ -79,7 +79,7 @@ export class DenoRuntime extends Runtime {
     });
     process.stdout.write(`\rDownload ${url} completed\n`);
 
-    const downloadedPath = path.join(os.tmpdir(), filename);
+    const downloadedPath = path.join(downloadDir, filename);
     const versionBinDir = path.join(installDir, `v${version}`, "bin");
 
     await fs.mkdir(versionBinDir, { recursive: true });
