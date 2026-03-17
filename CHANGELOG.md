@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.5
+
+### Patch Changes
+
+- c1c5e24: refactor: download files into `~/.jrm/downloads` directory
+
 ## 0.1.4
 
 ### Patch Changes
