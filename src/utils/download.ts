@@ -5,6 +5,7 @@ import { pipeline } from "node:stream/promises";
 
 export interface DownloadOptions {
   onProgress?: (received: number, total?: number) => void;
+  onResponse?: (response: Response) => boolean;
 }
 
 export async function download(
@@ -16,6 +17,11 @@ export async function download(
   if (!response.ok || !response.body) {
     await response.body?.cancel();
     throw new Error(`Failed to fetch ${url}. Status: ${response.status}.`);
+  }
+  const shouldDownload = options?.onResponse?.(response);
+  if (shouldDownload === false) {
+    await response.body.cancel();
+    return;
   }
 
   const contentLength = response.headers.get("content-length");

@@ -67,7 +67,20 @@ export class BunRuntime extends Runtime {
     const filename = `bun-${target}.zip`;
     const url = `${this.GITHUB_URL}/${this.GITHUB_REPO}/releases/download/bun-v${version}/${filename}`;
 
+    const downloadedPath = path.join(downloadDir, filename);
+    const localFileSize = await fs
+      .stat(downloadedPath)
+      .then((stat) => stat.size)
+      .catch(() => null);
     await download(url, downloadDir, {
+      onResponse: (response) => {
+        const contentLength = response.headers.get("content-length");
+        return !(
+          contentLength &&
+          localFileSize &&
+          localFileSize === Number(contentLength)
+        );
+      },
       onProgress: (received, total) => {
         if (total) {
           process.stdout.write(
@@ -78,7 +91,6 @@ export class BunRuntime extends Runtime {
     });
     process.stdout.write(`\rDownload ${url} completed\n`);
 
-    const downloadedPath = path.join(downloadDir, filename);
     const versionDir = path.join(installDir, `v${version}`);
 
     await fs.mkdir(versionDir, { recursive: true });
