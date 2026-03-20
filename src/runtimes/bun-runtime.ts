@@ -1,9 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import process from "node:process";
 import decompress from "decompress";
 import { Runtime } from "../runtime.ts";
-import { download } from "../utils/download.ts";
 
 export class BunRuntime extends Runtime {
   private readonly GITHUB_API_URL = "https://api.github.com";
@@ -61,35 +59,12 @@ export class BunRuntime extends Runtime {
   protected override async installRaw(
     version: string,
     installDir: string,
-    downloadDir: string,
   ): Promise<void> {
     const target = this.getTarget();
     const filename = `bun-${target}.zip`;
     const url = `${this.GITHUB_URL}/${this.GITHUB_REPO}/releases/download/bun-v${version}/${filename}`;
 
-    const downloadedPath = path.join(downloadDir, filename);
-    const localFileSize = await fs
-      .stat(downloadedPath)
-      .then((stat) => stat.size)
-      .catch(() => null);
-    await download(url, downloadDir, {
-      onResponse: (response) => {
-        const contentLength = response.headers.get("content-length");
-        return !(
-          contentLength &&
-          localFileSize &&
-          localFileSize === Number(contentLength)
-        );
-      },
-      onProgress: (received, total) => {
-        if (total) {
-          process.stdout.write(
-            `\rDownloading ${url}: ${Math.floor((received / total) * 100)}%`,
-          );
-        }
-      },
-    });
-    process.stdout.write(`\rDownload ${url} completed\n`);
+    const downloadedPath = await this.downloadToLocal(url);
 
     const versionDir = path.join(installDir, `v${version}`);
 

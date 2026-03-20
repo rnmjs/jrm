@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Detector } from "./detector.ts";
 import { Runtime } from "./runtime.ts";
 import { ask } from "./utils/ask.ts";
+import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
 
 // Mock all external dependencies
@@ -16,6 +17,9 @@ vi.mock("node:process", () => ({
     cwd: vi.fn(),
     ppid: 12345,
     env: {},
+    stdout: {
+      write: vi.fn(),
+    },
     stderr: {
       write: vi.fn(),
     },
@@ -23,6 +27,7 @@ vi.mock("node:process", () => ({
 }));
 vi.mock("./detector.ts");
 vi.mock("./utils/ask.ts");
+vi.mock("./utils/download.ts");
 vi.mock("./utils/exists.ts");
 
 // Create a concrete implementation of the abstract Runtime class for testing
@@ -48,6 +53,10 @@ class TestRuntime extends Runtime {
   ): Promise<void> {
     // Mock implementation - just create a directory
     await fs.mkdir(path.join(installDir, `v${version}`), { recursive: true });
+  }
+
+  async testDownloadToLocal(url: string): Promise<string> {
+    return await this.downloadToLocal(url);
   }
 }
 
@@ -661,6 +670,86 @@ describe("Runtime", () => {
 
       expect(result).toBe(true);
       expect(fs.symlink).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("downloadToLocal", () => {
+    it("should download file and return the downloaded path", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(download).mockResolvedValue(undefined);
+      vi.mocked(fs.stat).mockRejectedValue(new Error("File not found"));
+
+      const result = await runtime.testDownloadToLocal(
+        "https://example.com/dist/v1.0.0/test-file.tar.gz",
+      );
+
+      expect(result).toBe(
+        path.join(
+          mockHomedir,
+          ".jrm",
+          "testruntime",
+          "downloads",
+          "test-file.tar.gz",
+        ),
+      );
+      expect(download).toHaveBeenCalledWith(
+        "https://example.com/dist/v1.0.0/test-file.tar.gz",
+        path.join(mockHomedir, ".jrm", "testruntime", "downloads"),
+        expect.objectContaining({
+          onResponse: expect.any(Function),
+          onProgress: expect.any(Function),
+        }),
+      );
+    });
+
+    it("should skip download when local file size matches content-length", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(fs.stat).mockResolvedValue({ size: 1024 } as any);
+      // eslint-disable-next-line @typescript-eslint/require-await -- mockImplementation needs async to match the download function signature
+      vi.mocked(download).mockImplementation(async (_url, _dest, options) => {
+        const mockResponse = {
+          headers: {
+            get: (name: string) => (name === "content-length" ? "1024" : null),
+          },
+        } as any;
+        const shouldDownload = options?.onResponse?.(mockResponse);
+        expect(shouldDownload).toBe(false);
+      });
+
+      await runtime.testDownloadToLocal(
+        "https://example.com/dist/v1.0.0/test-file.tar.gz",
+      );
+
+      expect(download).toHaveBeenCalled();
+    });
+
+    it("should proceed with download when local file size differs from content-length", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(fs.stat).mockResolvedValue({ size: 512 } as any);
+      // eslint-disable-next-line @typescript-eslint/require-await -- mockImplementation needs async to match the download function signature
+      vi.mocked(download).mockImplementation(async (_url, _dest, options) => {
+        const mockResponse = {
+          headers: {
+            get: (name: string) => (name === "content-length" ? "1024" : null),
+          },
+        } as any;
+        const shouldDownload = options?.onResponse?.(mockResponse);
+        expect(shouldDownload).toBe(true);
+      });
+
+      await runtime.testDownloadToLocal(
+        "https://example.com/dist/v1.0.0/test-file.tar.gz",
+      );
+
+      expect(download).toHaveBeenCalled();
+    });
+
+    it("should throw error when URL has no filename", async () => {
+      const runtime = new TestRuntime();
+
+      await expect(
+        runtime.testDownloadToLocal("https://example.com/"),
+      ).rejects.toThrow("Internal error: unable to extract filename from URL");
     });
   });
 

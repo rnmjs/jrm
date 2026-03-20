@@ -5,6 +5,7 @@ import process from "node:process";
 import semver from "semver";
 import { Detector, type VersionDetectResult } from "./detector.ts";
 import { ask } from "./utils/ask.ts";
+import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
 
 export interface RuntimeOptions {
@@ -85,10 +86,43 @@ export abstract class Runtime {
       .sort((x, y) => semver.compare(y, x));
   }
 
+  protected async downloadToLocal(url: string): Promise<string> {
+    const downloadsDir = this.getDownloadsDir();
+    const filename = url.split("/").pop();
+    if (!filename) {
+      throw new Error(
+        `Internal error: unable to extract filename from URL "${url}".`,
+      );
+    }
+    const downloadedPath = path.join(downloadsDir, filename);
+    const localFileSize = await fs
+      .stat(downloadedPath)
+      .then((stat) => stat.size)
+      .catch(() => null);
+    await download(url, downloadsDir, {
+      onResponse: (response) => {
+        const contentLength = response.headers.get("content-length");
+        return !(
+          contentLength &&
+          localFileSize &&
+          localFileSize === Number(contentLength)
+        );
+      },
+      onProgress: (received, total) => {
+        if (total) {
+          process.stdout.write(
+            `\rDownloading ${url}: ${Math.floor((received / total) * 100)}%`,
+          );
+        }
+      },
+    });
+    process.stdout.write(`\rDownload ${url} completed\n`);
+    return downloadedPath;
+  }
+
   protected abstract installRaw(
     version: string,
     installDir: string,
-    downloadDir: string,
   ): Promise<void>;
   async install(versionRange: string): Promise<boolean> {
     let version = semver.valid(versionRange);
@@ -110,11 +144,7 @@ export abstract class Runtime {
       return false;
     }
 
-    await this.installRaw(
-      version,
-      this.getVersionsDir(),
-      this.getDownloadsDir(),
-    );
+    await this.installRaw(version, this.getVersionsDir());
 
     const updatedInstalledVersions = await this.getInstalledVersions();
     if (
