@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.6
+
+### Patch Changes
+
+- 38bc118: feat: skip download if file already exists with matching size
+
 ## 0.1.5
 
 ### Patch Changes
