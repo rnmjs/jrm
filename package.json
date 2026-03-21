@@ -13,22 +13,22 @@
     "test": "pnpm style && tsc --noEmit && vitest run --coverage --coverage.reporter=json-summary --coverage.reporter=html && make-coverage-badge --output-path badge/coverage.svg"
   },
   "dependencies": {
-    "commander": "14.0.2",
+    "commander": "14.0.3",
     "decompress": "4.2.1",
-    "semver": "7.7.3"
+    "semver": "7.7.4"
   },
   "devDependencies": {
-    "@changesets/cli": "2.29.8",
+    "@changesets/cli": "2.30.0",
     "@rnm/tscx": "0.3.10",
     "@types/decompress": "4.2.7",
-    "@types/node": "22.19.7",
+    "@types/node": "22.19.15",
     "@types/semver": "7.7.1",
-    "@vitest/coverage-v8": "4.0.17",
-    "esbuild": "0.27.2",
+    "@vitest/coverage-v8": "4.1.0",
+    "esbuild": "0.27.4",
     "fenge": "0.12.11",
     "make-coverage-badge": "1.2.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.1.0"
   },
   "devEngines": {
     "runtime": [
