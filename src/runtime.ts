@@ -126,6 +126,11 @@ export abstract class Runtime {
   ): Promise<void>;
   async install(versionRange: string): Promise<boolean> {
     let version = semver.valid(versionRange);
+    if (!version && !semver.validRange(versionRange)) {
+      throw new Error(
+        `\`${versionRange}\` is not a valid version or version range.`,
+      );
+    }
     if (!version) {
       const remoteVersions = await this.getRemoteVersions();
       const targetVersion = remoteVersions.find((remoteVersion) =>
