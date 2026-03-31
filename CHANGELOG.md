@@ -1,5 +1,11 @@
 # jrm
 
+## 0.1.7
+
+### Patch Changes
+
+- f696938: chore: when running `jrm install`, it's required a version or a version range
+
 ## 0.1.6
 
 ### Patch Changes
