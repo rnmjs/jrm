@@ -135,15 +135,13 @@ describe("Runtime", () => {
       );
     });
 
-    it("should create default alias when installing first version", async () => {
+    it("should install without creating aliases", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce([]) // First call - no versions installed
-        .mockResolvedValueOnce(["v2.0.0"] as any); // Second call - version installed
+      vi.mocked(fs.readdir).mockResolvedValue([]);
 
       await runtime.install("2.0.0");
 
-      expect(fs.symlink).toHaveBeenCalled();
+      expect(fs.symlink).not.toHaveBeenCalled();
     });
   });
 
@@ -172,12 +170,8 @@ describe("Runtime", () => {
       );
     });
 
-    it("should initialize with default version if exists", async () => {
+    it("should use installed version that matches range", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-      );
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
 
       const result = await runtime.use("2.0.0");
@@ -298,69 +292,19 @@ describe("Runtime", () => {
       expect(result).toBe("3.0.0");
     });
 
-    it("should use default version if it satisfies range", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-      );
-
-      const result = await runtime.use("^2.0.0");
-
-      expect(result).toBe("2.0.0");
-    });
-
     it("should use installed version if it satisfies range", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists)
-        .mockResolvedValueOnce(true) // default alias exists
-        .mockResolvedValueOnce(true); // for symlink creation
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
-      );
-      vi.mocked(fs.readdir).mockResolvedValue([
-        "v2.1.0",
-        "v2.0.0",
-        "v1.0.0",
-      ] as any);
+      vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0", "v1.0.0"] as any);
 
       const result = await runtime.use("^2.0.0");
 
-      expect(result).toBe("2.1.0");
-    });
-
-    it("should handle alias name", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists)
-        .mockResolvedValueOnce(true) // default alias exists
-        .mockResolvedValueOnce(true) // custom alias exists
-        .mockResolvedValueOnce(true); // for symlink creation
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-      );
-      vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
-
-      const result = await runtime.use("my-alias");
-
       expect(result).toBe("2.0.0");
-    });
-
-    it("should throw error if alias does not exist", async () => {
-      const runtime = new TestRuntime();
-      await expect(runtime.use("nonexistent-alias")).rejects.toThrow(
-        "No alias named nonexistent-alias found.",
-      );
     });
 
     it("should prompt to install if no installed version satisfies range", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
-      );
       vi.mocked(fs.readdir)
         .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions
-        .mockResolvedValueOnce(["v1.0.0"] as any) // before install
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install
       vi.mocked(ask).mockResolvedValue("y");
 
@@ -372,10 +316,6 @@ describe("Runtime", () => {
 
     it("should return undefined if user declines installation", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
-      );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
       vi.mocked(ask).mockResolvedValue("n");
 
@@ -386,10 +326,6 @@ describe("Runtime", () => {
 
     it("should throw error if no remote version satisfies range", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.realpath).mockResolvedValue(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
-      );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
       vi.mocked(ask).mockResolvedValue("y");
 
@@ -405,41 +341,27 @@ describe("Runtime", () => {
       const env = runtime.env();
 
       expect(env).toHaveProperty("JRM_MULTISHELL_PATH_OF_TESTRUNTIME");
-      expect(env).toHaveProperty("JRM_DEFAULT_ALIAS_PATH_OF_TESTRUNTIME");
+      expect(Object.keys(env)).toHaveLength(1);
       expect(env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"]).toContain(
         "testruntime/multishells",
-      );
-      expect(env["JRM_DEFAULT_ALIAS_PATH_OF_TESTRUNTIME"]).toContain(
-        "testruntime/aliases/default",
       );
     });
   });
 
   describe("list", () => {
-    it("should list installed versions with aliases", async () => {
+    it("should list installed versions", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce(["default", "stable"] as any) // aliases
-        .mockResolvedValueOnce(["v2.0.0", "v1.0.0"] as any); // versions
-      vi.mocked(fs.realpath)
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        ) // default alias
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        ); // stable alias
+      vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0", "v1.0.0"] as any);
 
       const result = await runtime.list();
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
         version: "2.0.0",
-        aliases: ["default", "stable"],
         isUsing: false,
       });
       expect(result[1]).toEqual({
         version: "1.0.0",
-        aliases: [],
         isUsing: false,
       });
     });
@@ -455,9 +377,7 @@ describe("Runtime", () => {
       );
       process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = multishellPath;
 
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce([]) // no aliases
-        .mockResolvedValueOnce(["v2.0.0"] as any); // versions
+      vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
       );
@@ -467,80 +387,14 @@ describe("Runtime", () => {
       expect(result[0]?.isUsing).toBe(true);
     });
 
-    it("should handle empty aliases directory", async () => {
+    it("should list installed versions", async () => {
       const runtime = new TestRuntime();
-      vi.mocked(fs.readdir)
-        .mockRejectedValueOnce(new Error("Directory not found")) // aliases
-        .mockResolvedValueOnce(["v1.0.0"] as any); // versions
+      vi.mocked(fs.readdir).mockResolvedValueOnce(["v1.0.0"] as any); // versions
 
       const result = await runtime.list();
 
       expect(result).toHaveLength(1);
-      expect(result[0]?.aliases).toEqual([]);
-    });
-  });
-
-  describe("alias", () => {
-    it("should create an alias for an installed version", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-
-      await runtime.alias("my-alias", "2.0.0");
-
-      expect(fs.symlink).toHaveBeenCalled();
-    });
-
-    it("should throw error for invalid version", async () => {
-      const runtime = new TestRuntime();
-      await expect(runtime.alias("my-alias", "invalid")).rejects.toThrow(
-        "Invalid version: invalid. Expected a valid semver (e.g., 20.0.0).",
-      );
-    });
-
-    it("should throw error if alias name is a valid semver range", async () => {
-      const runtime = new TestRuntime();
-      await expect(runtime.alias("^2.0.0", "2.0.0")).rejects.toThrow(
-        "Invalid alias name: ^2.0.0. Alias name cannot be a valid semver or a valid semver range.",
-      );
-    });
-
-    it("should throw error if version is not installed", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(false);
-
-      await expect(runtime.alias("my-alias", "2.0.0")).rejects.toThrow(
-        "testruntime@2.0.0 is not installed. Run `jrm install testruntime@2.0.0` first.",
-      );
-    });
-  });
-
-  describe("unalias", () => {
-    it("should remove an alias", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-
-      await runtime.unalias("my-alias");
-
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "my-alias"),
-        { recursive: true },
-      );
-    });
-
-    it("should throw error when trying to remove default alias", async () => {
-      const runtime = new TestRuntime();
-      await expect(runtime.unalias("default")).rejects.toThrow(
-        "'default' alias is reserved. Cannot remove it.",
-      );
-    });
-
-    it("should do nothing if alias does not exist", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(false);
-
-      await runtime.unalias("nonexistent");
-
-      expect(fs.rm).not.toHaveBeenCalled();
+      expect(result[0]?.version).toBe("1.0.0");
     });
   });
 
@@ -575,101 +429,6 @@ describe("Runtime", () => {
       await expect(runtime.uninstall("invalid")).rejects.toThrow(
         "Invalid version: invalid. Expected a valid semver (e.g., 20.0.0).",
       );
-    });
-
-    it("should remove aliases pointing to the uninstalled version", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists).mockResolvedValue(true);
-      vi.mocked(fs.readdir).mockResolvedValue(["default", "my-alias"] as any);
-      vi.mocked(fs.realpath)
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        )
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        );
-
-      const result = await runtime.uninstall("2.0.0");
-
-      expect(result).toBe(true);
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "default"),
-        { recursive: true },
-      );
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "my-alias"),
-        { recursive: true },
-      );
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        { recursive: true },
-      );
-    });
-
-    it("should not remove aliases pointing to other versions", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists)
-        .mockResolvedValueOnce(true) // version exists
-        .mockResolvedValueOnce(true); // default alias exists after uninstall
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce(["default", "other-alias"] as any) // aliases
-        .mockResolvedValueOnce(["v1.0.0", "v3.0.0"] as any); // remaining versions
-      vi.mocked(fs.realpath)
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
-        )
-        .mockResolvedValueOnce(
-          path.join(mockHomedir, ".jrm", "testruntime", "versions", "v3.0.0"),
-        );
-
-      const result = await runtime.uninstall("2.0.0");
-
-      expect(result).toBe(true);
-      expect(fs.rm).toHaveBeenCalledTimes(1);
-      expect(fs.rm).toHaveBeenCalledWith(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-        { recursive: true },
-      );
-    });
-
-    it("should set default alias to first remaining version when default is removed", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists)
-        .mockResolvedValueOnce(true) // version exists
-        .mockResolvedValueOnce(false); // default alias does not exist after removal
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce(["default"] as any) // aliases pointing to version being uninstalled
-        .mockResolvedValueOnce(["v1.0.0", "v3.0.0"] as any); // remaining versions (will be sorted by semver descending)
-      vi.mocked(fs.realpath).mockResolvedValueOnce(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-      );
-
-      const result = await runtime.uninstall("2.0.0");
-
-      expect(result).toBe(true);
-      // getInstalledVersions sorts by semver descending, so v3.0.0 comes first
-      expect(fs.symlink).toHaveBeenCalledWith(
-        "../versions/v3.0.0",
-        path.join(mockHomedir, ".jrm", "testruntime", "aliases", "default"),
-      );
-    });
-
-    it("should not set default alias when no remaining versions", async () => {
-      const runtime = new TestRuntime();
-      vi.mocked(exists)
-        .mockResolvedValueOnce(true) // version exists
-        .mockResolvedValueOnce(false); // default alias does not exist after removal
-      vi.mocked(fs.readdir)
-        .mockResolvedValueOnce(["default"] as any) // aliases
-        .mockResolvedValueOnce([] as any); // no remaining versions
-      vi.mocked(fs.realpath).mockResolvedValueOnce(
-        path.join(mockHomedir, ".jrm", "testruntime", "versions", "v2.0.0"),
-      );
-
-      const result = await runtime.uninstall("2.0.0");
-
-      expect(result).toBe(true);
-      expect(fs.symlink).not.toHaveBeenCalled();
     });
   });
 

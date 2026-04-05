@@ -3,7 +3,7 @@ import { getAllRuntimes, getRuntime } from "../common.ts";
 
 export interface UseCommandOptions {
   runtime: string;
-  versionRangeOrAlias: string;
+  versionRange: string;
 }
 
 export async function useCommand(options: UseCommandOptions[]): Promise<void> {
@@ -11,15 +11,15 @@ export async function useCommand(options: UseCommandOptions[]): Promise<void> {
     options.length === 0
       ? getAllRuntimes().map((runtime) => ({
           runtime,
-          versionRangeOrAlias: undefined,
+          versionRange: undefined,
         }))
       : options.map((option) => ({
           runtime: getRuntime(option.runtime),
-          versionRangeOrAlias: option.versionRangeOrAlias,
+          versionRange: option.versionRange,
         }));
 
-  for (const { runtime, versionRangeOrAlias } of items) {
-    const usingVersion = await runtime.use(versionRangeOrAlias);
+  for (const { runtime, versionRange } of items) {
+    const usingVersion = await runtime.use(versionRange);
     if (usingVersion) {
       process.stdout.write(`Using ${runtime.name}@${usingVersion}\n`);
     }

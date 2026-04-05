@@ -37,16 +37,8 @@ export abstract class Runtime {
     return path.join(this.home, this.name, "versions");
   }
 
-  private getAliasesDir() {
-    return path.join(this.home, this.name, "aliases");
-  }
-
   private getMultishellsDir() {
     return path.join(this.home, this.name, "multishells");
-  }
-
-  private getDefaultAliasPath() {
-    return path.join(this.getAliasesDir(), "default");
   }
 
   private getMultishellPath() {
@@ -150,21 +142,10 @@ export abstract class Runtime {
     }
 
     await this.installRaw(version, this.getVersionsDir());
-
-    const updatedInstalledVersions = await this.getInstalledVersions();
-    if (
-      updatedInstalledVersions.length === 1 &&
-      updatedInstalledVersions[0] === version
-    ) {
-      await this.createVersionSymlink(
-        updatedInstalledVersions[0],
-        this.getDefaultAliasPath(),
-      );
-    }
     return true;
   }
 
-  async use(versionRangeOrAlias?: string): Promise<string | undefined> {
+  async use(versionRange?: string): Promise<string | undefined> {
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     if (!multishellPath) {
@@ -178,13 +159,9 @@ export abstract class Runtime {
       );
     }
 
-    // 0. Init
-    const defaultVersion = (await exists(this.getDefaultAliasPath()))
-      ? await this.getVersionBySymlink(this.getDefaultAliasPath())
-      : undefined;
-    if (defaultVersion) {
-      await this.createVersionSymlink(defaultVersion, multishellPath);
-    } else {
+    // 0. Init — create stub binaries only when no versions are installed
+    const installedVersions = await this.getInstalledVersions();
+    if (installedVersions.length === 0) {
       await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
       for (const binary of [...this.bundledBinaries, this.name]) {
         await fs.writeFile(
@@ -200,77 +177,65 @@ export abstract class Runtime {
     }
 
     let onFail: Required<VersionDetectResult>["onFail"] = "error";
-    let versionRange: string | undefined = undefined;
-    if (!versionRangeOrAlias) {
+    let resolvedVersionRange: string | undefined = undefined;
+    if (!versionRange) {
       // handle auto-detect
       const detected = await new Detector(this.name).detectVersionRange(
         process.cwd(),
       );
-      if (detected?.versionRange) versionRange = detected.versionRange;
+      if (detected?.versionRange) resolvedVersionRange = detected.versionRange;
       if (detected?.onFail) onFail = detected.onFail;
-    } else if (semver.validRange(versionRangeOrAlias)) {
-      // handle version range
-      versionRange = versionRangeOrAlias;
     } else {
-      // handle alias
-      if (
-        !(await exists(path.join(this.getAliasesDir(), versionRangeOrAlias)))
-      ) {
-        throw new Error(`No alias named ${versionRangeOrAlias} found.`);
+      // handle version range
+      if (!semver.validRange(versionRange)) {
+        throw new Error(
+          `Invalid version range: ${versionRange}. Expected a valid semver range (e.g., 20.0.0, *, 20).`,
+        );
       }
-      versionRange = await this.getVersionBySymlink(
-        path.join(this.getAliasesDir(), versionRangeOrAlias),
-      );
+      resolvedVersionRange = versionRange;
     }
 
     // 1. No version range, do nothing.
-    if (!versionRange) {
+    if (!resolvedVersionRange) {
       return undefined;
     }
 
-    // 2. Use default version first.
-    if (defaultVersion && semver.satisfies(defaultVersion, versionRange)) {
-      await this.createVersionSymlink(defaultVersion, multishellPath);
-      return defaultVersion;
-    }
-
-    // 3. Use installed version.
-    const installedVersions = await this.getInstalledVersions();
+    // 2. Use installed version.
     const satisfiedVersion = installedVersions.find((installedVersion) =>
-      semver.satisfies(installedVersion, versionRange),
+      semver.satisfies(installedVersion, resolvedVersionRange),
     );
     if (satisfiedVersion) {
       await this.createVersionSymlink(satisfiedVersion, multishellPath);
       return satisfiedVersion;
     }
 
-    // 4. Use remote version.
+    // 3. Use remote version.
     switch (onFail) {
       case "ignore":
         return undefined;
       case "warn":
         process.stderr.write(
-          `No installed ${this.name} version satisfies ${versionRange}. Run \`jrm install ${this.name}@${versionRange}\` to install it.\n`,
+          `No installed ${this.name} version satisfies ${resolvedVersionRange}. Run \`jrm install ${this.name}@${resolvedVersionRange}\` to install it.\n`,
         );
         return undefined;
       case "error":
       case "download": {
         const installAnswer = await ask(
-          `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
+          `No installed ${this.name} version satisfies ${resolvedVersionRange}. Do you want to install one? (y/N): `,
         );
         if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
           return undefined;
         }
         const remoteVersions = await this.getRemoteVersions();
         const targetVersion = remoteVersions.find((remoteVersion) =>
-          semver.satisfies(remoteVersion, versionRange),
+          semver.satisfies(remoteVersion, resolvedVersionRange),
         );
         if (targetVersion) {
           await this.install(targetVersion);
           await this.createVersionSymlink(targetVersion, multishellPath);
           return targetVersion;
         }
-        throw new Error(`No remote version satisfies ${versionRange}.`);
+        throw new Error(`No remote version satisfies ${resolvedVersionRange}.`);
       }
     }
   }
@@ -279,24 +244,10 @@ export abstract class Runtime {
     return {
       [`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`]:
         this.getMultishellPath(),
-      // If we don't add this env variable, when user switch to other version, the installed npm packages under the default alias will not be found.
-      [`JRM_DEFAULT_ALIAS_PATH_OF_${this.name.toUpperCase()}`]:
-        this.getDefaultAliasPath(),
     };
   }
 
   async list() {
-    const promises = (
-      await fs.readdir(this.getAliasesDir()).catch(() => [])
-    ).map(async (name) => ({
-      name,
-      version: await this.getVersionBySymlink(
-        path.join(this.getAliasesDir(), name),
-      ),
-    }));
-    const aliases = await Promise.all(promises);
-
-    // Get currently using version
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     const usingVersion = !multishellPath
@@ -305,39 +256,8 @@ export abstract class Runtime {
 
     return (await this.getInstalledVersions()).map((version) => ({
       version,
-      aliases: aliases
-        .filter((alias) => alias.version === version)
-        .map((alias) => alias.name),
       isUsing: usingVersion === version,
     }));
-  }
-
-  async alias(aliasName: string, version: string): Promise<void> {
-    // Validate that version is a valid semver
-    if (!semver.valid(version)) {
-      throw new Error(
-        `Invalid version: ${version}. Expected a valid semver (e.g., 20.0.0).`,
-      );
-    }
-    if (semver.validRange(aliasName)) {
-      throw new Error(
-        `Invalid alias name: ${aliasName}. Alias name cannot be a valid semver or a valid semver range.`,
-      );
-    }
-
-    const aliasPath = path.join(this.getAliasesDir(), aliasName);
-    const versionPath = path.join(this.getVersionsDir(), `v${version}`);
-
-    // Check if the specific version is installed
-    if (!(await exists(versionPath))) {
-      throw new Error(
-        `${this.name}@${version} is not installed. Run \`jrm install ${this.name}@${version}\` first.`,
-      );
-    }
-
-    // We don't need to create the alias directory here, because if the version is installed, the alias directory must exist.
-    // JRM will create the default alias once the first version is installed.
-    await this.createVersionSymlink(version, aliasPath);
   }
 
   async uninstall(version: string): Promise<boolean> {
@@ -355,45 +275,7 @@ export abstract class Runtime {
       return false;
     }
 
-    // Find and remove all aliases pointing to this version
-    const aliasesDir = this.getAliasesDir();
-    const aliasNames = await fs.readdir(aliasesDir).catch(() => []);
-    for (const aliasName of aliasNames) {
-      const aliasPath = path.join(aliasesDir, aliasName);
-      const aliasVersion = await this.getVersionBySymlink(aliasPath).catch(
-        () => undefined,
-      );
-      if (aliasVersion === version) {
-        await fs.rm(aliasPath, { recursive: true });
-      }
-    }
-
-    // Remove the version directory
     await fs.rm(versionPath, { recursive: true });
-
-    // If default alias no longer exists and there are other installed versions, set default alias to the first available version
-    const defaultAliasPath = this.getDefaultAliasPath();
-    if (!(await exists(defaultAliasPath))) {
-      const remainingVersions = await this.getInstalledVersions();
-      const firstVersion = remainingVersions[0];
-      if (firstVersion) {
-        await this.createVersionSymlink(firstVersion, defaultAliasPath);
-      }
-    }
-
     return true;
-  }
-
-  async unalias(aliasName: string): Promise<void> {
-    if (aliasName === "default") {
-      throw new Error("'default' alias is reserved. Cannot remove it.");
-    }
-
-    const aliasPath = path.join(this.getAliasesDir(), aliasName);
-    if (!(await exists(aliasPath))) {
-      return;
-    }
-    // If not recursive, Deno will throw an error when the alias is a symlink, but Node.js will not.
-    await fs.rm(aliasPath, { recursive: true });
   }
 }
