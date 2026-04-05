@@ -147,15 +147,15 @@ export abstract class Runtime {
 
   async use(versionRange?: string): Promise<string | undefined> {
     const multishellPath =
-      process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
+      process.env[`JRM_MULTISHELL_PATH_OF_RT_${this.name.toUpperCase()}`];
     if (!multishellPath) {
       throw new Error(
-        `JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()} is not set.`,
+        `JRM_MULTISHELL_PATH_OF_RT_${this.name.toUpperCase()} is not set.`,
       );
     }
     if (!path.isAbsolute(multishellPath)) {
       throw new Error(
-        `Value of JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()} is not an absolute path.`,
+        `Value of JRM_MULTISHELL_PATH_OF_RT_${this.name.toUpperCase()} is not an absolute path.`,
       );
     }
 
@@ -242,14 +242,14 @@ export abstract class Runtime {
 
   env() {
     return {
-      [`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`]:
+      [`JRM_MULTISHELL_PATH_OF_RT_${this.name.toUpperCase()}`]:
         this.getMultishellPath(),
     };
   }
 
   async list() {
     const multishellPath =
-      process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
+      process.env[`JRM_MULTISHELL_PATH_OF_RT_${this.name.toUpperCase()}`];
     const usingVersion = !multishellPath
       ? undefined
       : await this.getVersionBySymlink(multishellPath);

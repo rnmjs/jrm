@@ -149,24 +149,24 @@ describe("Runtime", () => {
     const multishellPath = "/home/testuser/.jrm/testruntime/multishells/test";
 
     beforeEach(() => {
-      process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = multishellPath;
+      process.env["JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME"] = multishellPath;
     });
 
     it("should throw error if multishell path env is not set", async () => {
       const runtime = new TestRuntime();
-      process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = undefined;
+      process.env["JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME"] = undefined;
 
       await expect(runtime.use("2.0.0")).rejects.toThrow(
-        "JRM_MULTISHELL_PATH_OF_TESTRUNTIME is not set.",
+        "JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME is not set.",
       );
     });
 
     it("should throw error if multishell path is not absolute", async () => {
       const runtime = new TestRuntime();
-      process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = "relative/path";
+      process.env["JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME"] = "relative/path";
 
       await expect(runtime.use("2.0.0")).rejects.toThrow(
-        "Value of JRM_MULTISHELL_PATH_OF_TESTRUNTIME is not an absolute path.",
+        "Value of JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME is not an absolute path.",
       );
     });
 
@@ -340,9 +340,9 @@ describe("Runtime", () => {
       const runtime = new TestRuntime();
       const env = runtime.env();
 
-      expect(env).toHaveProperty("JRM_MULTISHELL_PATH_OF_TESTRUNTIME");
+      expect(env).toHaveProperty("JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME");
       expect(Object.keys(env)).toHaveLength(1);
-      expect(env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"]).toContain(
+      expect(env["JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME"]).toContain(
         "testruntime/multishells",
       );
     });
@@ -375,7 +375,7 @@ describe("Runtime", () => {
         "multishells",
         "test",
       );
-      process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = multishellPath;
+      process.env["JRM_MULTISHELL_PATH_OF_RT_TESTRUNTIME"] = multishellPath;
 
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
       vi.mocked(fs.realpath).mockResolvedValue(
