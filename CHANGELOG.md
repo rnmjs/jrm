@@ -1,5 +1,11 @@
 # jrm
 
+## 0.2.0
+
+### Minor Changes
+
+- 323eb6d: chore!: remove alias and unalias commands and all alias infrastructure
+
 ## 0.1.7
 
 ### Patch Changes
