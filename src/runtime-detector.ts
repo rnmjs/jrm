@@ -7,7 +7,7 @@ export interface VersionDetectResult {
   onFail?: "download" | "error" | "warn" | "ignore";
 }
 
-export class Detector {
+export class RuntimeDetector {
   private readonly name: string;
   constructor(name: string) {
     this.name = name;

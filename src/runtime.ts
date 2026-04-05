@@ -3,7 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import { Detector, type VersionDetectResult } from "./detector.ts";
+import {
+  RuntimeDetector,
+  type VersionDetectResult,
+} from "./runtime-detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
@@ -180,7 +183,7 @@ export abstract class Runtime {
     let resolvedVersionRange: string | undefined = undefined;
     if (!versionRange) {
       // handle auto-detect
-      const detected = await new Detector(this.name).detectVersionRange(
+      const detected = await new RuntimeDetector(this.name).detectVersionRange(
         process.cwd(),
       );
       if (detected?.versionRange) resolvedVersionRange = detected.versionRange;

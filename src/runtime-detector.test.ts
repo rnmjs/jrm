@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Detector } from "./detector.ts";
+import { RuntimeDetector } from "./runtime-detector.ts";
 import { exists } from "./utils/exists.ts";
 
 vi.mock("node:fs/promises");
 vi.mock("./utils/exists.ts");
 
-describe("Detector", () => {
+describe("RuntimeDetector", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -16,7 +16,7 @@ describe("Detector", () => {
   });
 
   it("should detect version from .{name}-version file", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith(".node-version")),
@@ -29,7 +29,7 @@ describe("Detector", () => {
   });
 
   it("should detect version from package.json with single runtime", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -52,7 +52,7 @@ describe("Detector", () => {
   });
 
   it("should detect version from package.json with multiple runtimes", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -81,7 +81,7 @@ describe("Detector", () => {
   });
 
   it("should prioritize .{name}-version file over package.json", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(true);
     // eslint-disable-next-line @typescript-eslint/require-await -- for test
     vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
@@ -104,7 +104,7 @@ describe("Detector", () => {
   });
 
   it("should search parent directories when no version file found", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     let callCount = 0;
     // eslint-disable-next-line @typescript-eslint/require-await -- for test
     vi.mocked(exists).mockImplementation(async (filePath: string) => {
@@ -120,7 +120,7 @@ describe("Detector", () => {
   });
 
   it("should return undefined when no version file found in any parent directory", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(false);
 
     const version = await detector.detectVersionRange("/test/dir");
@@ -129,7 +129,7 @@ describe("Detector", () => {
   });
 
   it("should return undefined when package.json has no devEngines", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -147,7 +147,7 @@ describe("Detector", () => {
   });
 
   it("should return undefined when runtime name does not match", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -170,7 +170,7 @@ describe("Detector", () => {
   });
 
   it("should handle version file with whitespace", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith(".node-version")),
@@ -183,7 +183,7 @@ describe("Detector", () => {
   });
 
   it("should work with different runtime names", async () => {
-    const bunDetector = new Detector("bun");
+    const bunDetector = new RuntimeDetector("bun");
 
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
@@ -197,7 +197,7 @@ describe("Detector", () => {
   });
 
   it("should detect onFail from package.json", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -221,7 +221,7 @@ describe("Detector", () => {
   });
 
   it("should detect onFail with multiple runtimes", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -252,7 +252,7 @@ describe("Detector", () => {
   });
 
   it("should detect onFail as download", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -276,7 +276,7 @@ describe("Detector", () => {
   });
 
   it("should handle invalid JSON in package.json gracefully", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
         await Promise.resolve(filePath.endsWith("package.json")),
@@ -289,7 +289,7 @@ describe("Detector", () => {
   });
 
   it("should stop at root directory", async () => {
-    const detector = new Detector("node");
+    const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(false);
 
     const version = await detector.detectVersionRange("/");

@@ -9,10 +9,11 @@ JRM (JavaScript Runtime Manager) is a fast and lightweight JavaScript runtime ve
 ## Commands
 
 ```bash
-pnpm install        # Install dependencies
-pnpm build          # Bundle with esbuild, compile binaries for all platforms (calls build.sh)
-pnpm test           # Run style check + type check + vitest with coverage
-pnpm style          # Code style checking (eslint)
+pnpm install         # Install dependencies
+pnpm build           # Bundle with esbuild, compile binaries for all platforms (calls build.sh)
+pnpm test            # Run style check + type check + vitest with coverage
+pnpm style           # Code style check
+pnpm style:update    # Code style check + update
 ```
 
 ## Architecture
@@ -22,7 +23,7 @@ pnpm style          # Code style checking (eslint)
 - `src/main.cli.ts` — CLI entry point (Commander.js)
 - `src/runtime.ts` — Abstract base class defining the Runtime interface; all runtimes extend this
 - `src/common.ts` — Registry managing all supported runtimes (Node.js, Bun, Deno)
-- `src/detector.ts` — Auto-detects versions from `.node-version`, `.bun-version`, `.deno-version`, and `package.json` `devEngines`
+- `src/runtime-detector.ts` — Auto-detects runtime versions from `.node-version`, `.bun-version`, `.deno-version`, and `package.json` `devEngines`
 
 ### Module Organization
 

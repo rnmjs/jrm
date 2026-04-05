@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Detector } from "./detector.ts";
+import { RuntimeDetector } from "./runtime-detector.ts";
 import { Runtime } from "./runtime.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
@@ -25,7 +25,7 @@ vi.mock("node:process", () => ({
     },
   },
 }));
-vi.mock("./detector.ts");
+vi.mock("./runtime-detector.ts");
 vi.mock("./utils/ask.ts");
 vi.mock("./utils/download.ts");
 vi.mock("./utils/exists.ts");
@@ -183,7 +183,7 @@ describe("Runtime", () => {
     it("should create placeholder binaries when no default version exists", async () => {
       const runtime = new TestRuntime();
       vi.mocked(exists).mockResolvedValue(false);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue(
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
         undefined,
       );
 
@@ -200,7 +200,7 @@ describe("Runtime", () => {
     it("should return undefined when no version range is detected", async () => {
       const runtime = new TestRuntime();
       vi.mocked(exists).mockResolvedValue(false);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue(
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
         undefined,
       );
 
@@ -216,10 +216,12 @@ describe("Runtime", () => {
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
       );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
-        versionRange: "^3.0.0",
-        onFail: "ignore",
-      });
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "ignore",
+        },
+      );
 
       const result = await runtime.use();
 
@@ -234,10 +236,12 @@ describe("Runtime", () => {
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
       );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
-        versionRange: "^3.0.0",
-        onFail: "warn",
-      });
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "warn",
+        },
+      );
 
       const result = await runtime.use();
 
@@ -258,10 +262,12 @@ describe("Runtime", () => {
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
-        versionRange: "^3.0.0",
-        onFail: "error",
-      });
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "error",
+        },
+      );
       vi.mocked(ask).mockResolvedValue("y");
 
       const result = await runtime.use();
@@ -280,10 +286,12 @@ describe("Runtime", () => {
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
-      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
-        versionRange: "^3.0.0",
-        onFail: "download",
-      });
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "download",
+        },
+      );
       vi.mocked(ask).mockResolvedValue("y");
 
       const result = await runtime.use();
