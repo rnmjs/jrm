@@ -162,9 +162,14 @@ export abstract class Runtime {
       );
     }
 
-    // 0. Init — create stub binaries only when no versions are installed
+    // 0. Init
     const installedVersions = await this.getInstalledVersions();
-    if (installedVersions.length === 0) {
+    const greatestVersion = installedVersions[0];
+    if (greatestVersion) {
+      // Use greatest version as default version
+      await this.createVersionSymlink(greatestVersion, multishellPath);
+    } else {
+      // If no version is installed, create stub binaries
       await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
       for (const binary of [...this.bundledBinaries, this.name]) {
         await fs.writeFile(
