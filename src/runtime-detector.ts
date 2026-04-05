@@ -1,11 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { VersionDetectResult } from "./interfaces.ts";
 import { exists } from "./utils/exists.ts";
-
-export interface VersionDetectResult {
-  versionRange: string;
-  onFail?: "download" | "error" | "warn" | "ignore";
-}
 
 export class RuntimeDetector {
   private readonly name: string;
