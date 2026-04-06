@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import decompress from "decompress";
 import { Runtime } from "../runtime.ts";
@@ -11,18 +12,18 @@ export class DenoRuntime extends Runtime {
   protected override bundledBinaries: string[] = [];
 
   private getTarget(): string {
-    if (this.platform === "win32") {
+    if (os.platform() === "win32") {
       return "x86_64-pc-windows-msvc";
     }
 
-    if (this.platform === "darwin") {
-      return this.arch === "arm64"
+    if (os.platform() === "darwin") {
+      return os.arch() === "arm64"
         ? "aarch64-apple-darwin"
         : "x86_64-apple-darwin";
     }
 
-    if (this.platform === "linux") {
-      return this.arch === "arm64"
+    if (os.platform() === "linux") {
+      return os.arch() === "arm64"
         ? "aarch64-unknown-linux-gnu"
         : "x86_64-unknown-linux-gnu";
     }

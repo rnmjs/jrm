@@ -22,8 +22,6 @@ export abstract class Runtime {
    * Other bundled binaries of this runtime, like npm and npx in node.
    */
   protected abstract readonly bundledBinaries: string[];
-  protected readonly platform = os.platform();
-  protected readonly arch = os.arch();
   private readonly home: string;
 
   constructor(options: RuntimeOptions = {}) {

@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import decompress from "decompress";
 import { Runtime } from "../runtime.ts";
@@ -22,14 +23,14 @@ export class NodeRuntime extends Runtime {
     version: string,
     installDir: string,
   ): Promise<void> {
-    const filename = `node-v${version}-${this.platform}-${this.arch}.${this.platform === "win32" ? "zip" : "tar.gz"}`;
+    const filename = `node-v${version}-${os.platform()}-${os.arch()}.${os.platform() === "win32" ? "zip" : "tar.gz"}`;
     const url = [this.NODE_DIST_MIRROR, `v${version}`, filename].join("/");
 
     const downloadedPath = await this.downloadToLocal(url);
 
     await decompress(downloadedPath, installDir);
     await fs.rename(
-      path.join(installDir, `node-v${version}-${this.platform}-${this.arch}`),
+      path.join(installDir, `node-v${version}-${os.platform()}-${os.arch()}`),
       path.join(installDir, `v${version}`),
     );
     await fs.rm(downloadedPath);
