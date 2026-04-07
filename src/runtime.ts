@@ -144,6 +144,7 @@ export abstract class Runtime {
   }
 
   async use(versionRange?: string): Promise<string | undefined> {
+    // 1. Check if multishell path is set.
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
     if (!multishellPath) {
@@ -157,6 +158,29 @@ export abstract class Runtime {
       );
     }
 
+    // 2. Initialize multishell.
+    const installedVersions = await this.getInstalledVersions();
+    const greatestVersion = installedVersions[0];
+    if (greatestVersion) {
+      // Use greatest version as default version
+      await this.createVersionSymlink(greatestVersion, multishellPath);
+    } else {
+      // If no version is installed, create stub binaries
+      await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
+      for (const binary of [...this.bundledBinaries, this.name]) {
+        await fs.writeFile(
+          path.join(multishellPath, "bin", binary),
+          [
+            "#!/usr/bin/env bash",
+            `echo 'No ${this.name} is installed. Run \`jrm use '${this.name}@*'\` to make ${binary} available.'`,
+            "exit 1",
+          ].join("\n"),
+        );
+        await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
+      }
+    }
+
+    // 3. Use version.
     if (versionRange) {
       // This is often called manually.
       return await this.useWithVersionRange(multishellPath, versionRange);
@@ -197,31 +221,10 @@ export abstract class Runtime {
     );
 
     // 1. If not detected, use the greatest version or stub.
-    const installedVersions = await this.getInstalledVersions();
-    if (!detected) {
-      const greatestVersion = installedVersions[0];
-      if (greatestVersion) {
-        // Use greatest version as default version
-        await this.createVersionSymlink(greatestVersion, multishellPath);
-      } else {
-        // If no version is installed, create stub binaries
-        await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
-        for (const binary of [...this.bundledBinaries, this.name]) {
-          await fs.writeFile(
-            path.join(multishellPath, "bin", binary),
-            [
-              "#!/usr/bin/env bash",
-              `echo 'No ${this.name} is used. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
-              "exit 1",
-            ].join("\n"),
-          );
-          await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
-        }
-      }
-      return undefined;
-    }
+    if (!detected) return undefined;
 
     // 2. Use installed version.
+    const installedVersions = await this.getInstalledVersions();
     const satisfiedVersion = installedVersions.find((installedVersion) =>
       semver.satisfies(installedVersion, detected.versionRange),
     );

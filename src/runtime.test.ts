@@ -312,7 +312,8 @@ describe("Runtime", () => {
     it("should prompt to install if no installed version satisfies range", async () => {
       const runtime = new TestRuntime();
       vi.mocked(fs.readdir)
-        .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions
+        .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell
+        .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithVersionRange
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install
       vi.mocked(ask).mockResolvedValue("y");
 
