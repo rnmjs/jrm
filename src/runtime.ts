@@ -3,7 +3,6 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import type { VersionDetectResult } from "./interfaces.ts";
 import { RuntimeDetector } from "./runtime-detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
@@ -158,55 +157,73 @@ export abstract class Runtime {
       );
     }
 
-    // 0. Init
-    const installedVersions = await this.getInstalledVersions();
-    const greatestVersion = installedVersions[0];
-    if (greatestVersion) {
-      // Use greatest version as default version
-      await this.createVersionSymlink(greatestVersion, multishellPath);
-    } else {
-      // If no version is installed, create stub binaries
-      await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
-      for (const binary of [...this.bundledBinaries, this.name]) {
-        await fs.writeFile(
-          path.join(multishellPath, "bin", binary),
-          [
-            "#!/usr/bin/env bash",
-            `echo 'No ${this.name} is used. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
-            "exit 1",
-          ].join("\n"),
-        );
-        await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
-      }
+    if (versionRange) {
+      // This is often called manually.
+      return await this.useWithVersionRange(multishellPath, versionRange);
     }
+    // This is often called automatically.
+    return await this.useWithoutVersionRange(multishellPath);
+  }
 
-    let onFail: Required<VersionDetectResult>["onFail"] = "error";
-    let resolvedVersionRange: string | undefined = undefined;
-    if (!versionRange) {
-      // handle auto-detect
-      const detected = await new RuntimeDetector(this.name).detectVersionRange(
-        process.cwd(),
+  private async useWithVersionRange(
+    multishellPath: string,
+    versionRange: string,
+  ): Promise<string | undefined> {
+    if (!semver.validRange(versionRange)) {
+      throw new Error(
+        `Invalid version range: ${versionRange}. Expected a valid semver range (e.g., 20.0.0, *, 20).`,
       );
-      if (detected?.versionRange) resolvedVersionRange = detected.versionRange;
-      if (detected?.onFail) onFail = detected.onFail;
-    } else {
-      // handle version range
-      if (!semver.validRange(versionRange)) {
-        throw new Error(
-          `Invalid version range: ${versionRange}. Expected a valid semver range (e.g., 20.0.0, *, 20).`,
-        );
-      }
-      resolvedVersionRange = versionRange;
     }
 
-    // 1. No version range, do nothing.
-    if (!resolvedVersionRange) {
+    // 1. Use installed version.
+    const installedVersions = await this.getInstalledVersions();
+    const satisfiedVersion = installedVersions.find((installedVersion) =>
+      semver.satisfies(installedVersion, versionRange),
+    );
+    if (satisfiedVersion) {
+      await this.createVersionSymlink(satisfiedVersion, multishellPath);
+      return satisfiedVersion;
+    }
+
+    // 2. Use remote version.
+    return await this.askAndInstall(multishellPath, versionRange);
+  }
+
+  private async useWithoutVersionRange(
+    multishellPath: string,
+  ): Promise<string | undefined> {
+    const detected = await new RuntimeDetector(this.name).detectVersionRange(
+      process.cwd(),
+    );
+
+    // 1. If not detected, use the greatest version or stub.
+    const installedVersions = await this.getInstalledVersions();
+    if (!detected) {
+      const greatestVersion = installedVersions[0];
+      if (greatestVersion) {
+        // Use greatest version as default version
+        await this.createVersionSymlink(greatestVersion, multishellPath);
+      } else {
+        // If no version is installed, create stub binaries
+        await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
+        for (const binary of [...this.bundledBinaries, this.name]) {
+          await fs.writeFile(
+            path.join(multishellPath, "bin", binary),
+            [
+              "#!/usr/bin/env bash",
+              `echo 'No ${this.name} is used. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
+              "exit 1",
+            ].join("\n"),
+          );
+          await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
+        }
+      }
       return undefined;
     }
 
     // 2. Use installed version.
     const satisfiedVersion = installedVersions.find((installedVersion) =>
-      semver.satisfies(installedVersion, resolvedVersionRange),
+      semver.satisfies(installedVersion, detected.versionRange),
     );
     if (satisfiedVersion) {
       await this.createVersionSymlink(satisfiedVersion, multishellPath);
@@ -214,34 +231,42 @@ export abstract class Runtime {
     }
 
     // 3. Use remote version.
+    const onFail = detected.onFail ?? "error";
     switch (onFail) {
       case "ignore":
         return undefined;
       case "warn":
         process.stderr.write(
-          `No installed ${this.name} version satisfies ${resolvedVersionRange}. Run \`jrm install ${this.name}@${resolvedVersionRange}\` to install it.\n`,
+          `No installed ${this.name} version satisfies ${detected.versionRange}. Run \`jrm install ${this.name}@${detected.versionRange}\` to install it.\n`,
         );
         return undefined;
       case "error":
-      case "download": {
-        const installAnswer = await ask(
-          `No installed ${this.name} version satisfies ${resolvedVersionRange}. Do you want to install one? (y/N): `,
-        );
-        if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
-          return undefined;
-        }
-        const remoteVersions = await this.getRemoteVersions();
-        const targetVersion = remoteVersions.find((remoteVersion) =>
-          semver.satisfies(remoteVersion, resolvedVersionRange),
-        );
-        if (targetVersion) {
-          await this.install(targetVersion);
-          await this.createVersionSymlink(targetVersion, multishellPath);
-          return targetVersion;
-        }
-        throw new Error(`No remote version satisfies ${resolvedVersionRange}.`);
-      }
+      case "download":
+        return await this.askAndInstall(multishellPath, detected.versionRange);
     }
+  }
+
+  private async askAndInstall(
+    multishellPath: string,
+    versionRange: string,
+  ): Promise<string | undefined> {
+    const installAnswer = await ask(
+      `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
+    );
+    if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
+      return undefined;
+    }
+
+    const remoteVersions = await this.getRemoteVersions();
+    const targetVersion = remoteVersions.find((remoteVersion) =>
+      semver.satisfies(remoteVersion, versionRange),
+    );
+    if (!targetVersion) {
+      throw new Error(`No remote version satisfies ${versionRange}.`);
+    }
+    await this.install(targetVersion);
+    await this.createVersionSymlink(targetVersion, multishellPath);
+    return targetVersion;
   }
 
   env() {
