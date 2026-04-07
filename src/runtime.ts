@@ -7,12 +7,14 @@ import { RuntimeDetector } from "./runtime-detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
+import { isInProject } from "./utils/is-in-project.ts";
 
 export interface RuntimeOptions {
   /**
    * Home directory of JRM.
    */
   home?: string;
+  strict?: boolean;
 }
 
 export abstract class Runtime {
@@ -22,9 +24,11 @@ export abstract class Runtime {
    */
   protected abstract readonly bundledBinaries: string[];
   private readonly home: string;
+  private readonly strict: boolean;
 
   constructor(options: RuntimeOptions = {}) {
     this.home = options.home ?? path.join(os.homedir(), ".jrm");
+    this.strict = options.strict ?? false;
   }
 
   private getDownloadsDir() {
@@ -158,7 +162,31 @@ export abstract class Runtime {
       );
     }
 
-    // 2. Initialize multishell.
+    // 2. Strict mode check.
+    if (this.strict) {
+      const isNotConfiguredWith =
+        (await isInProject(process.cwd())) &&
+        !(await new RuntimeDetector(this.name).detectVersionRange(
+          process.cwd(),
+        ));
+      if (isNotConfiguredWith) {
+        await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
+        for (const binary of [...this.bundledBinaries, this.name]) {
+          await fs.writeFile(
+            path.join(multishellPath, "bin", binary),
+            [
+              "#!/usr/bin/env bash",
+              `echo 'Current project is not configured with ${this.name}. Please configure the devEngines field in package.json at the project root directory.'`,
+              "exit 1",
+            ].join("\n"),
+          );
+          await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
+        }
+        return undefined;
+      }
+    }
+
+    // 3. Initialize multishell.
     const installedVersions = await this.getInstalledVersions();
     const greatestVersion = installedVersions[0];
     if (greatestVersion) {
@@ -180,7 +208,7 @@ export abstract class Runtime {
       }
     }
 
-    // 3. Use version.
+    // 4. Use version.
     if (versionRange) {
       // This is often called manually.
       return await this.useWithVersionRange(multishellPath, versionRange);

@@ -8,6 +8,7 @@ import { Runtime } from "./runtime.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
+import { isInProject } from "./utils/is-in-project.ts";
 
 // Mock all external dependencies
 vi.mock("node:fs/promises");
@@ -29,6 +30,7 @@ vi.mock("./runtime-detector.ts");
 vi.mock("./utils/ask.ts");
 vi.mock("./utils/download.ts");
 vi.mock("./utils/exists.ts");
+vi.mock("./utils/is-in-project.ts");
 
 // Create a concrete implementation of the abstract Runtime class for testing
 class TestRuntime extends Runtime {
@@ -88,6 +90,9 @@ describe("Runtime", () => {
 
     // Setup default exists mock
     vi.mocked(exists).mockResolvedValue(false);
+
+    // Setup default isInProject mock
+    vi.mocked(isInProject).mockResolvedValue(false);
   });
 
   describe("install", () => {
@@ -340,6 +345,108 @@ describe("Runtime", () => {
 
       await expect(runtime.use("^99.0.0")).rejects.toThrow(
         "No remote version satisfies ^99.0.0.",
+      );
+    });
+  });
+
+  describe("use with strict mode", () => {
+    const multishellPath = "/home/testuser/.jrm/testruntime/multishells/test";
+
+    beforeEach(() => {
+      process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = multishellPath;
+    });
+
+    it("should create error stub binaries when strict mode is enabled, in project, and no version configured", async () => {
+      const runtime = new TestRuntime({ strict: true });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        undefined,
+      );
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await runtime.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should create stub binaries with error message
+      expect(fs.mkdir).toHaveBeenCalledWith(path.join(multishellPath, "bin"), {
+        recursive: true,
+      });
+      expect(fs.writeFile).toHaveBeenCalledTimes(3); // testruntime, testbin, testtool
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testruntime"),
+        expect.stringContaining(
+          "Current project is not configured with testruntime",
+        ),
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testbin"),
+        expect.stringContaining(
+          "Current project is not configured with testruntime",
+        ),
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testtool"),
+        expect.stringContaining(
+          "Current project is not configured with testruntime",
+        ),
+      );
+      expect(fs.chmod).toHaveBeenCalledTimes(3);
+    });
+
+    it("should proceed normally when strict mode is enabled but version is configured", async () => {
+      const runtime = new TestRuntime({ strict: true });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "1.0.0",
+        },
+      );
+      vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
+
+      const result = await runtime.use(undefined);
+
+      expect(result).toBe("1.0.0");
+      expect(fs.symlink).toHaveBeenCalled();
+      // Should NOT create error stub binaries
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining("not configured"),
+      );
+    });
+
+    it("should proceed normally when strict mode is enabled but not in project", async () => {
+      const runtime = new TestRuntime({ strict: true });
+      vi.mocked(isInProject).mockResolvedValue(false);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        undefined,
+      );
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await runtime.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should NOT create error stub binaries since not in project
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining("not configured"),
+      );
+    });
+
+    it("should skip strict mode check when strict option is not set", async () => {
+      const runtime = new TestRuntime();
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        undefined,
+      );
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await runtime.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should NOT create error stub binaries since strict mode is not enabled
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining("not configured"),
       );
     });
   });
