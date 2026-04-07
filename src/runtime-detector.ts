@@ -1,14 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { Detector } from "./detector.ts";
 import type { VersionDetectResult } from "./interfaces.ts";
 import { exists } from "./utils/exists.ts";
 
-export class RuntimeDetector {
-  private readonly name: string;
-  constructor(name: string) {
-    this.name = name;
-  }
-
+export class RuntimeDetector extends Detector {
   private async detectByVersionFile(
     dirPath: string,
   ): Promise<VersionDetectResult | undefined> {

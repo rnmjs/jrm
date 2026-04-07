@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import { RuntimeDetector } from "./runtime-detector.ts";
+import type { Detector } from "./detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
@@ -15,6 +15,7 @@ export interface RuntimeOptions {
    */
   home?: string;
   strict?: boolean;
+  DetectorClass: new (name: string) => Detector;
 }
 
 export abstract class Runtime {
@@ -25,10 +26,12 @@ export abstract class Runtime {
   protected abstract readonly bundledBinaries: string[];
   private readonly home: string;
   private readonly strict: boolean;
+  private readonly DetectorClass: new (name: string) => Detector;
 
-  constructor(options: RuntimeOptions = {}) {
+  constructor(options: RuntimeOptions) {
     this.home = options.home ?? path.join(os.homedir(), ".jrm");
     this.strict = options.strict ?? false;
+    this.DetectorClass = options.DetectorClass;
   }
 
   private getDownloadsDir() {
@@ -166,7 +169,7 @@ export abstract class Runtime {
     if (this.strict) {
       const isNotConfiguredWith =
         (await isInProject(process.cwd())) &&
-        !(await new RuntimeDetector(this.name).detectVersionRange(
+        !(await new this.DetectorClass(this.name).detectVersionRange(
           process.cwd(),
         ));
       if (isNotConfiguredWith) {
@@ -244,7 +247,7 @@ export abstract class Runtime {
   private async useWithoutVersionRange(
     multishellPath: string,
   ): Promise<string | undefined> {
-    const detected = await new RuntimeDetector(this.name).detectVersionRange(
+    const detected = await new this.DetectorClass(this.name).detectVersionRange(
       process.cwd(),
     );
 

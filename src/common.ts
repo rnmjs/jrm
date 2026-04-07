@@ -1,12 +1,13 @@
+import { RuntimeDetector } from "./runtime-detector.ts";
 import type { Runtime } from "./runtime.ts";
 import { BunRuntime } from "./runtimes/bun-runtime.ts";
 import { DenoRuntime } from "./runtimes/deno-runtime.ts";
 import { NodeRuntime } from "./runtimes/node-runtime.ts";
 
 const ALL_RUNTIMES: Runtime[] = [
-  new NodeRuntime(),
-  new BunRuntime(),
-  new DenoRuntime(),
+  new NodeRuntime({ DetectorClass: RuntimeDetector }),
+  new BunRuntime({ DetectorClass: RuntimeDetector }),
+  new DenoRuntime({ DetectorClass: RuntimeDetector }),
 ];
 
 export function getAllRuntimes() {
