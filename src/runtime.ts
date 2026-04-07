@@ -200,7 +200,7 @@ export abstract class Runtime {
           path.join(multishellPath, "bin", binary),
           [
             "#!/usr/bin/env bash",
-            `echo 'No ${this.name} is installed. Run \`jrm use '${this.name}@*'\` to make ${binary} available.'`,
+            `echo 'No ${this.name} is installed. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
             "exit 1",
           ].join("\n"),
         );
