@@ -1,5 +1,11 @@
 # jrm
 
+## 0.2.1
+
+### Patch Changes
+
+- dc20cb5: fix: ensure multishell path is always initialized before use
+
 ## 0.2.0
 
 ### Minor Changes
