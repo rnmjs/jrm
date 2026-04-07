@@ -37,7 +37,7 @@ export class RuntimeDetector {
         ? rawRuntime
         : [rawRuntime];
     const matched = runtime.find((r) => r.name === this.name);
-    if (matched?.name === this.name) {
+    if (matched) {
       const result: VersionDetectResult = {
         versionRange: matched.version ?? "*",
       };
