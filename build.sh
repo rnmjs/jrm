@@ -40,7 +40,7 @@ for target in "${!platforms[@]}"; do
 
   # Downloading from github.com will redirect to release-assets.githubusercontent.com
   $DENO_CMD compile \
-    --allow-net="nodejs.org,dl.deno.land,api.github.com,github.com,release-assets.githubusercontent.com" \
+    --allow-net="nodejs.org,dl.deno.land,api.github.com,github.com,release-assets.githubusercontent.com,registry.npmjs.org,registry.npmmirror.com" \
     --allow-write \
     --allow-read \
     --allow-env \
