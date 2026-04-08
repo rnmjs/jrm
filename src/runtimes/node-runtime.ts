@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import decompress from "decompress";
-import { Runtime } from "../runtime.ts";
+import { Executable } from "../executable.ts";
 
-export class NodeRuntime extends Runtime {
+export class NodeRuntime extends Executable {
   private readonly NODE_DIST_MIRROR = "https://nodejs.org/dist";
 
   override name = "node";

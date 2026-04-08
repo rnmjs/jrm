@@ -1,10 +1,10 @@
+import type { Executable } from "./executable.ts";
 import { RuntimeDetector } from "./runtime-detector.ts";
-import type { Runtime } from "./runtime.ts";
 import { BunRuntime } from "./runtimes/bun-runtime.ts";
 import { DenoRuntime } from "./runtimes/deno-runtime.ts";
 import { NodeRuntime } from "./runtimes/node-runtime.ts";
 
-const ALL_RUNTIMES: Runtime[] = [
+const ALL_RUNTIMES: Executable[] = [
   new NodeRuntime({ DetectorClass: RuntimeDetector }),
   new BunRuntime({ DetectorClass: RuntimeDetector }),
   new DenoRuntime({ DetectorClass: RuntimeDetector }),

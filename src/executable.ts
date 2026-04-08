@@ -9,7 +9,7 @@ import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
 import { isInProject } from "./utils/is-in-project.ts";
 
-export interface RuntimeOptions {
+export interface ExecutableOptions {
   /**
    * Home directory of JRM.
    */
@@ -18,17 +18,17 @@ export interface RuntimeOptions {
   DetectorClass: new (name: string) => Detector;
 }
 
-export abstract class Runtime {
+export abstract class Executable {
   abstract readonly name: string;
   /**
-   * Other bundled binaries of this runtime, like npm and npx in node.
+   * Other bundled binaries of this executable, like npm and npx in node.
    */
   protected abstract readonly bundledBinaries: string[];
   private readonly home: string;
   private readonly strict: boolean;
   private readonly DetectorClass: new (name: string) => Detector;
 
-  constructor(options: RuntimeOptions) {
+  constructor(options: ExecutableOptions) {
     this.home = options.home ?? path.join(os.homedir(), ".jrm");
     this.strict = options.strict ?? false;
     this.DetectorClass = options.DetectorClass;

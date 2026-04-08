@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import decompress from "decompress";
-import { Runtime } from "../runtime.ts";
+import { Executable } from "../executable.ts";
 
-export class DenoRuntime extends Runtime {
+export class DenoRuntime extends Executable {
   private readonly DENO_DIST_MIRROR = "https://dl.deno.land";
   private readonly GITHUB_API_URL = "https://api.github.com";
 

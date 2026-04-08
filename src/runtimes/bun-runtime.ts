@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import decompress from "decompress";
-import { Runtime } from "../runtime.ts";
+import { Executable } from "../executable.ts";
 
-export class BunRuntime extends Runtime {
+export class BunRuntime extends Executable {
   private readonly GITHUB_API_URL = "https://api.github.com";
   private readonly GITHUB_URL = "https://github.com";
   private readonly GITHUB_REPO = "oven-sh/bun";
