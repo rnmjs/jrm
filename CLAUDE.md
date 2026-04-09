@@ -9,31 +9,36 @@ JRM (JavaScript Runtime Manager) is a fast and lightweight JavaScript runtime ve
 ## Commands
 
 ```bash
-pnpm install         # Install dependencies
-pnpm build           # Bundle with esbuild, compile binaries for all platforms (calls build.sh)
-pnpm test            # Run style check + type check + vitest with coverage
-pnpm style           # Code style check
-pnpm style:update    # Code style check + update
+pnpm install                    # Install dependencies
+pnpm build                      # Bundle with esbuild, compile binaries for all platforms (calls build.sh)
+pnpm test                       # Run style check + type check + vitest with coverage
+pnpm vitest run <test-file>     # Run a specific test file (e.g., pnpm vitest run src/executable.test.ts)
+pnpm style                      # Code style check
+pnpm style:update               # Code style check + update
 ```
+
+> 当前项目使用 pnpm，禁止使用 npm 和 npx。
 
 ## Architecture
 
 ### Core Structure
 
-- `src/main.cli.ts` — CLI entry point (Commander.js)
-- `src/runtime.ts` — Abstract base class defining the Runtime interface; all runtimes extend this
+- `src/main.cli.ts` — CLI entry point (Commander.js), registers `env`, `install`, `list`, `use`, `uninstall` subcommands
+- `src/executable.ts` — Abstract base class (`Executable`) with install, use, list, uninstall, env, download, and strict mode logic; all runtimes extend this
+- `src/detector.ts` — Abstract base class (`Detector`) defining the `detectVersionRange()` interface
+- `src/runtime-detector.ts` — Auto-detects runtime versions from `.{runtime}-version` files and `package.json` `devEngines`, recursing up parent directories
+- `src/interfaces.ts` — Shared types (`VersionDetectResult`)
 - `src/common.ts` — Registry managing all supported runtimes (Node.js, Bun, Deno)
-- `src/runtime-detector.ts` — Auto-detects runtime versions from `.node-version`, `.bun-version`, `.deno-version`, and `package.json` `devEngines`
 
 ### Module Organization
 
-- `src/commands/` — Individual CLI command implementations (install, use, list, alias, etc.)
+- `src/commands/` — CLI commands: `env`, `install`, `list`, `uninstall`, `use`
 - `src/runtimes/` — Runtime-specific implementations for node, bun, deno
-- `src/utils/` — Shared utilities (download, file existence checks, user prompts)
+- `src/utils/` — Shared utilities (`ask`, `download`, `exists`, `is-in-project`)
 
 ### Key Patterns
 
-1. **Abstract Runtime Class**: `Runtime` is abstract with `getRemoteVersionsRaw()` and `installRaw()` as required methods for subclasses.
+1. **Executable Base Class**: `Executable` is abstract with `getRemoteVersionsRaw()` and `installRaw()` as required methods for subclasses. Supports semver range resolution, interactive prompts, and strict mode (generates error stub binaries when a project lacks configuration).
 2. **Version Storage**: Versions stored in `~/.jrm/{runtime}/versions/v{version}`, managed via symlinks.
 3. **Multi-Shell Support**: Creates unique directories per process with timestamps to avoid env conflicts.
 4. **Auto-Detection**: Recursive directory traversal upward looking for version config files.
