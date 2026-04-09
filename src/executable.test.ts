@@ -195,6 +195,8 @@ describe("Executable", () => {
       const result = await executable.use();
 
       expect(result).toBeUndefined();
+      // Should delete existing multishell before creating stubs
+      expect(fs.rm).toHaveBeenCalledWith(multishellPath, { recursive: true });
       expect(fs.mkdir).toHaveBeenCalledWith(path.join(multishellPath, "bin"), {
         recursive: true,
       });
@@ -370,6 +372,8 @@ describe("Executable", () => {
       const result = await executable.use(undefined);
 
       expect(result).toBeUndefined();
+      // Should delete existing multishell before creating stubs
+      expect(fs.rm).toHaveBeenCalledWith(multishellPath, { recursive: true });
       // Should create stub binaries with error message
       expect(fs.mkdir).toHaveBeenCalledWith(path.join(multishellPath, "bin"), {
         recursive: true,

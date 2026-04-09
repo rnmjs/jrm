@@ -173,6 +173,9 @@ export abstract class Executable {
           process.cwd(),
         ));
       if (isNotConfiguredWith) {
+        await fs.rm(multishellPath, { recursive: true }).catch(() => {
+          /* do nothing */
+        });
         await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
         for (const binary of [...this.bundledBinaries, this.name]) {
           await fs.writeFile(
@@ -197,6 +200,9 @@ export abstract class Executable {
       await this.createVersionSymlink(greatestVersion, multishellPath);
     } else {
       // If no version is installed, create stub binaries
+      await fs.rm(multishellPath, { recursive: true }).catch(() => {
+        /* do nothing */
+      });
       await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
       for (const binary of [...this.bundledBinaries, this.name]) {
         await fs.writeFile(
