@@ -1,5 +1,11 @@
 # jrm
 
+## 0.2.2
+
+### Patch Changes
+
+- 8b7714d: fix: remove existing multishell directory before creating stub binaries
+
 ## 0.2.1
 
 ### Patch Changes
