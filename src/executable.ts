@@ -50,6 +50,25 @@ export abstract class Executable {
     return path.join(this.getMultishellsDir(), `${process.ppid}_${Date.now()}`);
   }
 
+  private async writeStubBinaries(
+    targetDir: string,
+    getMessage: (binary: string) => string,
+  ) {
+    await fs.rm(targetDir, { recursive: true }).catch(() => {
+      /* do nothing */
+    });
+    await fs.mkdir(path.join(targetDir, "bin"), { recursive: true });
+    for (const binary of [...this.bundledBinaries, this.name]) {
+      await fs.writeFile(
+        path.join(targetDir, "bin", binary),
+        ["#!/usr/bin/env bash", `echo '${getMessage(binary)}'`, "exit 1"].join(
+          "\n",
+        ),
+      );
+      await fs.chmod(path.join(targetDir, "bin", binary), 0o755);
+    }
+  }
+
   private async createVersionSymlink(version: string, source: string) {
     if (!path.isAbsolute(source)) {
       throw new TypeError(`Source path '${source}' is not an absolute path.`);
@@ -173,21 +192,11 @@ export abstract class Executable {
           process.cwd(),
         ));
       if (isNotConfiguredWith) {
-        await fs.rm(multishellPath, { recursive: true }).catch(() => {
-          /* do nothing */
-        });
-        await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
-        for (const binary of [...this.bundledBinaries, this.name]) {
-          await fs.writeFile(
-            path.join(multishellPath, "bin", binary),
-            [
-              "#!/usr/bin/env bash",
-              `echo 'Current project is not configured with ${this.name}. Please configure the devEngines field in package.json at the project root directory.'`,
-              "exit 1",
-            ].join("\n"),
-          );
-          await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
-        }
+        await this.writeStubBinaries(
+          multishellPath,
+          () =>
+            `Current project is not configured with ${this.name}. Please review and configure the devEngines field in package.json at the project root directory.`,
+        );
         return undefined;
       }
     }
@@ -195,27 +204,13 @@ export abstract class Executable {
     // 3. Initialize multishell.
     const installedVersions = await this.getInstalledVersions();
     const greatestVersion = installedVersions[0];
-    if (greatestVersion) {
-      // Use greatest version as default version
-      await this.createVersionSymlink(greatestVersion, multishellPath);
-    } else {
-      // If no version is installed, create stub binaries
-      await fs.rm(multishellPath, { recursive: true }).catch(() => {
-        /* do nothing */
-      });
-      await fs.mkdir(path.join(multishellPath, "bin"), { recursive: true });
-      for (const binary of [...this.bundledBinaries, this.name]) {
-        await fs.writeFile(
-          path.join(multishellPath, "bin", binary),
-          [
-            "#!/usr/bin/env bash",
-            `echo 'No ${this.name} is installed. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.'`,
-            "exit 1",
-          ].join("\n"),
-        );
-        await fs.chmod(path.join(multishellPath, "bin", binary), 0o755);
-      }
-    }
+    await (greatestVersion
+      ? this.createVersionSymlink(greatestVersion, multishellPath)
+      : this.writeStubBinaries(
+          multishellPath,
+          (binary) =>
+            `No ${this.name} is installed. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.`,
+        ));
 
     // 4. Use version.
     if (versionRange) {
