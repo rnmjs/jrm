@@ -10,12 +10,14 @@ const ALL_RUNTIMES: Executable[] = [
   new DenoRuntime({ DetectorClass: RuntimeDetector }),
 ];
 
-export function getAllRuntimes() {
-  return ALL_RUNTIMES;
+export function getAllExecutables(): Executable[] {
+  return [...ALL_RUNTIMES];
 }
 
-export function getRuntime(name: string) {
-  const result = ALL_RUNTIMES.find((runtime) => runtime.name === name);
-  if (!result) throw new Error(`Runtime ${name} is not supported.`);
-  return result;
+export function getExecutable(name: string): Executable {
+  const executable = getAllExecutables().find(
+    (executable) => executable.name === name,
+  );
+  if (executable) return executable;
+  throw new Error(`Executable ${name} is not supported.`);
 }

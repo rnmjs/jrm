@@ -1,13 +1,13 @@
 import process from "node:process";
-import { getAllRuntimes } from "../common.ts";
+import { getAllExecutables } from "../common.ts";
 
 function print(content: string) {
   process.stdout.write(`${content}\n`);
 }
 
 export function envCommand(): void {
-  const envs = getAllRuntimes()
-    .map((runtime) => runtime.env())
+  const envs = getAllExecutables()
+    .map((executable) => executable.env())
     .reduce((acc, cur) => ({ ...acc, ...cur }), {});
 
   print(

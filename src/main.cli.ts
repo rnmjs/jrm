@@ -9,19 +9,19 @@ import { uninstallCommand } from "./commands/uninstall-command.ts";
 import { useCommand } from "./commands/use-command.ts";
 
 /**
- * Parse runtime specifications from command line arguments
- * @param runtimeSpecs Array of runtime specifications (e.g., ["node@20.0.0", "deno@2.0.0"])
- * @returns Array of parsed runtime objects with runtime name and version
+ * Parse executable specifications from command line arguments
+ * @param specs Array of executable specifications (e.g., ["node@20.0.0", "npm@10.8.0"])
+ * @returns Array of parsed executable objects with name and version
  */
-function parseRuntimeSpecs(runtimeSpecs: string[]) {
-  return runtimeSpecs.map((runtimeSpec) => {
-    const match = /^([^@]+)@(.+)$/.exec(runtimeSpec);
+function parseSpecs(specs: string[]) {
+  return specs.map((spec) => {
+    const match = /^([^@]+)@(.+)$/.exec(spec);
     if (!match?.[1] || !match[2]) {
       throw new Error(
-        `Invalid runtime specification: ${runtimeSpec}. Expected format: runtime@version (e.g., node@20.0.0)`,
+        `Invalid specification: ${spec}. Expected format: name@version (e.g., node@20.0.0)`,
       );
     }
-    return { runtime: match[1], versionRange: match[2] };
+    return { name: match[1], versionRange: match[2] };
   });
 }
 
@@ -41,15 +41,15 @@ program
 
 program
   .command("install")
-  .description("install specified runtime versions")
+  .description("install specified executable versions")
   .argument(
-    "<runtimes...>",
-    "runtime specifications (e.g., node@20 deno@2.0.0)",
+    "<executables...>",
+    "executable specifications (e.g., node@20 npm@10.8.0)",
   )
-  .action(async (runtimeSpecs: string[]) => {
+  .action(async (specs: string[]) => {
     await installCommand(
-      parseRuntimeSpecs(runtimeSpecs).map((spec) => ({
-        runtime: spec.runtime,
+      parseSpecs(specs).map((spec) => ({
+        name: spec.name,
         versionRange: spec.versionRange,
       })),
     );
@@ -57,37 +57,37 @@ program
 
 program
   .command("list")
-  .description("list installed runtime versions")
+  .description("list installed executable versions")
   .argument(
-    "[runtime]",
-    "runtime name to list versions for (e.g., node). If not specified, lists all runtimes",
+    "[executable]",
+    "executable name to list versions for (e.g., node, npm). If not specified, lists all executables",
   )
-  .action(async (runtimeName?: string) => {
-    await listCommand(runtimeName);
+  .action(async (executableName?: string) => {
+    await listCommand(executableName);
   });
 
 program
   .command("use")
-  .description("use specified runtime versions or auto-detect from project")
+  .description("use specified executable versions or auto-detect from project")
   .argument(
-    "[runtimes...]",
-    "runtime specifications (e.g., node@20 bun@* deno@2.0.0)",
+    "[executables...]",
+    "executable specifications (e.g., node@20 npm@10.8.0)",
   )
-  .action(async (runtimeSpecs: string[]) => {
-    await useCommand(parseRuntimeSpecs(runtimeSpecs));
+  .action(async (specs: string[]) => {
+    await useCommand(parseSpecs(specs));
   });
 
 program
   .command("uninstall")
-  .description("uninstall specified runtime versions")
+  .description("uninstall specified executable versions")
   .argument(
-    "<runtimes...>",
-    "runtime specifications (e.g., node@20.0.0 deno@2.0.0)",
+    "<executables...>",
+    "executable specifications (e.g., node@20.0.0 npm@10.8.0)",
   )
-  .action(async (runtimeSpecs: string[]) => {
+  .action(async (specs: string[]) => {
     await uninstallCommand(
-      parseRuntimeSpecs(runtimeSpecs).map((spec) => ({
-        runtime: spec.runtime,
+      parseSpecs(specs).map((spec) => ({
+        name: spec.name,
         version: spec.versionRange,
       })),
     );

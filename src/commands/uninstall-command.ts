@@ -1,8 +1,8 @@
 import process from "node:process";
-import { getRuntime } from "../common.ts";
+import { getExecutable } from "../common.ts";
 
 export interface UninstallCommandOptions {
-  runtime: string;
+  name: string;
   version: string;
 }
 
@@ -10,15 +10,15 @@ export async function uninstallCommand(
   options: UninstallCommandOptions[],
 ): Promise<void> {
   const items = options.map((option) => ({
-    runtime: getRuntime(option.runtime),
+    executable: getExecutable(option.name),
     version: option.version,
   }));
 
-  for (const { runtime, version } of items) {
-    const uninstalled = await runtime.uninstall(version);
+  for (const { executable, version } of items) {
+    const uninstalled = await executable.uninstall(version);
     if (!uninstalled) {
       process.stdout.write(
-        `${runtime.name}@${version} is not installed, skip.\n`,
+        `${executable.name}@${version} is not installed, skip.\n`,
       );
     }
   }
