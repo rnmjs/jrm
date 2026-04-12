@@ -1,5 +1,11 @@
 # jrm
 
+## 0.2.3
+
+### Patch Changes
+
+- 50f384c: fix: optimize `use` command logic
+
 ## 0.2.2
 
 ### Patch Changes
