@@ -10,7 +10,7 @@ import { useCommand } from "./commands/use-command.ts";
 
 /**
  * Parse executable specifications from command line arguments
- * @param specs Array of executable specifications (e.g., ["node@20.0.0", "npm@10.8.0"])
+ * @param specs Array of executable specifications (e.g., ["node@20.0.0", "bun@1.2.0"])
  * @returns Array of parsed executable objects with name and version
  */
 function parseSpecs(specs: string[]) {
@@ -44,7 +44,7 @@ program
   .description("install specified executable versions")
   .argument(
     "<executables...>",
-    "executable specifications (e.g., node@20 npm@10.8.0)",
+    "executable specifications (e.g., node@20 bun@1.2.0)",
   )
   .action(async (specs: string[]) => {
     await installCommand(
@@ -60,7 +60,7 @@ program
   .description("list installed executable versions")
   .argument(
     "[executable]",
-    "executable name to list versions for (e.g., node, npm). If not specified, lists all executables",
+    "executable name to list versions for (e.g., node, bun). If not specified, lists all executables",
   )
   .action(async (executableName?: string) => {
     await listCommand(executableName);
@@ -71,7 +71,7 @@ program
   .description("use specified executable versions or auto-detect from project")
   .argument(
     "[executables...]",
-    "executable specifications (e.g., node@20 npm@10.8.0)",
+    "executable specifications (e.g., node@20 bun@1.2.0)",
   )
   .action(async (specs: string[]) => {
     await useCommand(parseSpecs(specs));
@@ -82,7 +82,7 @@ program
   .description("uninstall specified executable versions")
   .argument(
     "<executables...>",
-    "executable specifications (e.g., node@20.0.0 npm@10.8.0)",
+    "executable specifications (e.g., node@20.0.0 bun@1.2.0)",
   )
   .action(async (specs: string[]) => {
     await uninstallCommand(
