@@ -1,4 +1,7 @@
-import type { VersionDetectResult } from "./interfaces.ts";
+export interface VersionDetectResult {
+  versionRange: string;
+  onFail?: "download" | "error" | "warn" | "ignore";
+}
 
 export abstract class Detector {
   protected readonly name: string;

@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { Detector } from "./detector.ts";
-import type { VersionDetectResult } from "./interfaces.ts";
+import { Detector, type VersionDetectResult } from "./detector.ts";
 import { exists } from "./utils/exists.ts";
 
 export class RuntimeDetector extends Detector {
