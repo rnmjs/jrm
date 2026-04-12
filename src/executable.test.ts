@@ -238,6 +238,7 @@ describe("Executable", () => {
 
     it("should print warning and return undefined when onFail is warn", async () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
@@ -261,6 +262,7 @@ describe("Executable", () => {
 
     it("should prompt to install when onFail is error", async () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
@@ -285,6 +287,7 @@ describe("Executable", () => {
 
     it("should prompt to install when onFail is download", async () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
@@ -378,7 +381,8 @@ describe("Executable", () => {
       expect(fs.mkdir).toHaveBeenCalledWith(path.join(multishellPath, "bin"), {
         recursive: true,
       });
-      expect(fs.writeFile).toHaveBeenCalledTimes(3); // testruntime, testbin, testtool
+      // writeStubBinaries is called twice: once for no installed version (line 228), once for strict mode (line 279)
+      expect(fs.writeFile).toHaveBeenCalledTimes(6); // 3 binaries × 2 calls
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(multishellPath, "bin", "testruntime"),
         expect.stringContaining(
@@ -397,7 +401,8 @@ describe("Executable", () => {
           "Current project is not configured with testruntime",
         ),
       );
-      expect(fs.chmod).toHaveBeenCalledTimes(3);
+      // chmod is called twice: once for no installed version (line 228), once for strict mode (line 279)
+      expect(fs.chmod).toHaveBeenCalledTimes(6); // 3 binaries × 2 writeStubBinaries calls
     });
 
     it("should proceed normally when strict mode is enabled but version is configured", async () => {

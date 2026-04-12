@@ -184,35 +184,7 @@ export abstract class Executable {
       );
     }
 
-    // 2. Strict mode check.
-    if (this.strict) {
-      const isNotConfiguredWith =
-        (await isInProject(process.cwd())) &&
-        !(await new this.DetectorClass(this.name).detectVersionRange(
-          process.cwd(),
-        ));
-      if (isNotConfiguredWith) {
-        await this.writeStubBinaries(
-          multishellPath,
-          () =>
-            `Current project is not configured with ${this.name}. Please review and configure the devEngines field in package.json at the project root directory.`,
-        );
-        return undefined;
-      }
-    }
-
-    // 3. Initialize multishell.
-    const installedVersions = await this.getInstalledVersions();
-    const greatestVersion = installedVersions[0];
-    await (greatestVersion
-      ? this.createVersionSymlink(greatestVersion, multishellPath)
-      : this.writeStubBinaries(
-          multishellPath,
-          (binary) =>
-            `No ${this.name} is installed. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.`,
-        ));
-
-    // 4. Use version.
+    // 2. Use version.
     if (versionRange) {
       // This is often called manually.
       return await this.useWithVersionRange(multishellPath, versionRange);
@@ -248,36 +220,69 @@ export abstract class Executable {
   private async useWithoutVersionRange(
     multishellPath: string,
   ): Promise<string | undefined> {
+    // 1. Initialize multishell.
+    const installedVersions = await this.getInstalledVersions();
+    const defaultVersion = installedVersions[0]; // Currently, we use the greatest version as default version.
+    await (defaultVersion
+      ? this.createVersionSymlink(defaultVersion, multishellPath)
+      : this.writeStubBinaries(
+          multishellPath,
+          (binary) =>
+            `No ${this.name} is installed. Run \`jrm use ${this.name}@<version>\` to make ${binary} available.`,
+        ));
+
+    // 2. When outside of project, just use the default version.
+    if (!(await isInProject(process.cwd()))) {
+      return undefined;
+    }
+
+    // 3. When inside of project, there are 2 cases:
+    // - Detected version. If detected version, use installed version -> use remote version.
+    // - Not detected version. If not detected version, use default version.
     const detected = await new this.DetectorClass(this.name).detectVersionRange(
       process.cwd(),
     );
 
-    // 1. If not detected, use the greatest version or stub.
-    if (!detected) return undefined;
+    // Handle detected version.
+    if (detected) {
+      // Use installed version.
+      const satisfiedVersion = installedVersions.find((installedVersion) =>
+        semver.satisfies(installedVersion, detected.versionRange),
+      );
+      if (satisfiedVersion) {
+        await this.createVersionSymlink(satisfiedVersion, multishellPath);
+        return satisfiedVersion;
+      }
 
-    // 2. Use installed version.
-    const installedVersions = await this.getInstalledVersions();
-    const satisfiedVersion = installedVersions.find((installedVersion) =>
-      semver.satisfies(installedVersion, detected.versionRange),
-    );
-    if (satisfiedVersion) {
-      await this.createVersionSymlink(satisfiedVersion, multishellPath);
-      return satisfiedVersion;
+      // Use remote version.
+      const onFail = detected.onFail ?? "error";
+      switch (onFail) {
+        case "ignore":
+          return undefined;
+        case "warn":
+          process.stderr.write(
+            `No installed ${this.name} version satisfies ${detected.versionRange}. Run \`jrm install ${this.name}@${detected.versionRange}\` to install it.\n`,
+          );
+          return undefined;
+        case "error":
+        case "download":
+          return await this.askAndInstall(
+            multishellPath,
+            detected.versionRange,
+          );
+      }
+      // TODO: In strict mode, if askAndInstall returns undefined, we should write stub binaries whose message is "No satisfied version for ${this.name} is installed. Run `jrm use ${this.name}@<version>` to make ${binary} available."
     }
-
-    // 3. Use remote version.
-    const onFail = detected.onFail ?? "error";
-    switch (onFail) {
-      case "ignore":
-        return undefined;
-      case "warn":
-        process.stderr.write(
-          `No installed ${this.name} version satisfies ${detected.versionRange}. Run \`jrm install ${this.name}@${detected.versionRange}\` to install it.\n`,
+    // Handle not detected version.
+    else {
+      if (this.strict) {
+        await this.writeStubBinaries(
+          multishellPath,
+          () =>
+            `Current project is not configured with ${this.name}. Please review the devEngines in package.json at the project root directory, or properly configure it.`,
         );
-        return undefined;
-      case "error":
-      case "download":
-        return await this.askAndInstall(multishellPath, detected.versionRange);
+      }
+      return undefined;
     }
   }
 
