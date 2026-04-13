@@ -6,7 +6,7 @@ import { exists } from "./exists.ts";
 
 describe("download", () => {
   const testDir = path.join(import.meta.dirname, "../../test-downloads");
-  const testUrl = "https://httpbin.org/bytes/1024"; // 1KB test file
+  const testUrl = "https://httpbin.org/bytes/32"; // 32B test file
 
   beforeEach(async () => {
     await fs.mkdir(testDir, { recursive: true });

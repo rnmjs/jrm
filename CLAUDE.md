@@ -17,7 +17,7 @@ pnpm style                      # Code style check
 pnpm style:update               # Code style check + update
 ```
 
-> 当前项目使用 pnpm，禁止使用 npm 和 npx。
+> This project uses pnpm. Do NOT use npm or npx.
 
 ## Architecture
 
@@ -27,7 +27,6 @@ pnpm style:update               # Code style check + update
 - `src/executable.ts` — Abstract base class (`Executable`) with install, use, list, uninstall, env, download, and strict mode logic; all runtimes extend this
 - `src/detector.ts` — Abstract base class (`Detector`) defining the `detectVersionRange()` interface
 - `src/runtime-detector.ts` — Auto-detects runtime versions from `.{runtime}-version` files and `package.json` `devEngines`, recursing up parent directories
-- `src/interfaces.ts` — Shared types (`VersionDetectResult`)
 - `src/common.ts` — Registry managing all supported runtimes (Node.js, Bun, Deno)
 
 ### Module Organization
