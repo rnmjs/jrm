@@ -90,9 +90,10 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
 
 ## 🗑️ Uninstallation
 
-1. **Remove JRM directory**: `rm -rf ~/.jrm`
-2. **Edit shell profile**: Remove `eval "$(jrm env)"` from `~/.bashrc` or `~/.zshrc`
-3. **Restart terminal**: Run `source ~/.bashrc` or `source ~/.zshrc`
+1. **Remove JRM binary**: `rm /usr/local/bin/jrm`
+2. **Remove JRM directory**: `rm -rf ~/.jrm`
+3. **Edit shell profile**: Remove `eval "$(jrm env)"` from `~/.bashrc` or `~/.zshrc`
+4. **Restart terminal**: Run `source ~/.bashrc` or `source ~/.zshrc`
 
 ## 👀 See Also
 
