@@ -3,28 +3,26 @@
 [![GitHub license](https://img.shields.io/github/license/rnmjs/jrm)](./LICENSE)
 [![](./badge/coverage.svg)]()
 
-A fast and simple JavaScript runtime version manager for Node.js, Bun, and Deno.
+A fast and simple version manager for JavaScript runtimes and package managers.
+
+**Supported:** Node.js, Bun, Deno, npm, Yarn, pnpm.
 
 ## ✨ Features
 
-- 🚀 **Fast & Lightweight** - Minimal overhead with efficient version switching
-- 🎯 **Auto-Detection** - Automatically detect and use project-specific runtime versions
-- 📁 **Project-Based** - Support for `.node-version` files and `package.json` devEngines
-- 📦 **Version Range Support** - Use semantic versioning ranges for flexible version management
+- 🚀 **Fast & Lightweight** — Written in TypeScript, bundled with esbuild
+- 🎯 **Auto-Detection** — Automatically detects versions from project files and `package.json`
+- 📦 **Version Range Support** — Use semver ranges like `node@>=20`
+- 🌐 **Custom Registry** — Respects your npm registry configuration
 
 ## 🚀 Installation
 
-### Download from GitHub Releases
-
 ```bash
-# For Linux/macOS. You may need to add `sudo` in front of these two commands.
+# Linux/macOS (may require sudo)
 curl -L "https://github.com/rnmjs/jrm/releases/latest/download/jrm-$(uname -s)-$(uname -m)" -o /usr/local/bin/jrm
 chmod +x /usr/local/bin/jrm
 ```
 
-> Go to the [GitHub Releases](https://github.com/rnmjs/jrm/releases) for more assets.
-
-### Verify Installation
+> See [GitHub Releases](https://github.com/rnmjs/jrm/releases) for all platforms.
 
 ```bash
 jrm --version
@@ -32,50 +30,45 @@ jrm --version
 
 ## 📖 Usage
 
-### Shell Setup
+### 1. Shell Setup
 
-Add JRM to your shell profile. This step is required for JRM to work properly:
+Add this to `~/.bashrc` or `~/.zshrc`, then restart your terminal:
 
 ```bash
-# Add this line to the end of ~/.bashrc or ~/.zshrc
 eval "$(jrm env)"
 ```
 
-After adding this line, restart your terminal or run `source ~/.bashrc` (or `source ~/.zshrc`).
-
-### Basic Commands
+### 2. Install Versions
 
 ```bash
-# Set specific Node.js version
+jrm install node@22 pnpm@9
+```
+
+### 3. Use Versions
+
+```bash
+# Specific versions
 jrm use node@18
-node --version # -> 18.20.8
-
-# Set multiple runtime versions
 jrm use node@22.21.1 bun@1.3.5 deno@2.6.3
-node --version # -> 22.21.1
-bun --version # -> 1.3.5
-deno --version # -> 2.6.3
+
+# Package manager versions
+jrm use pnpm@9
+jrm use yarn@4.6.0
 ```
 
-### Project Configuration
+### 4. Project Configuration
 
-JRM can automatically detect runtime versions from your project configuration:
+JRM auto-detects versions when you `cd` into a project. Configure versions using:
+
+**Version files:**
 
 ```bash
-echo "22.21.1" > .node-version
-echo "1.3.5" > .bun-version
-echo "2.6.3" > .deno-version
-
-jrm use
-
-node --version # -> 22.21.1
-bun --version # -> 1.3.5
-deno --version # -> 2.6.3
+.node-version    # Node.js
+.bun-version     # Bun
+.deno-version     # Deno
 ```
 
-> JRM will automatically run `jrm use` when you `cd` into the directory. That means, when you `cd` into the directory, JRM will automatically set the runtime versions for you.
-
-Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `package.json`:
+**Or `package.json` devEngines:**
 
 ```json
 {
@@ -83,45 +76,47 @@ Not only `.{runtime}-version` files, JRM but also supports `devEngines` in `pack
     "runtime": {
       "name": "node",
       "version": ">=20.0.0"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=9.0.0"
     }
   }
 }
 ```
 
+### 5. Other Commands
+
+```bash
+# List installed versions
+jrm list
+jrm list node
+jrm list pnpm
+
+# Uninstall a version
+jrm uninstall node@18.0.0
+```
+
 ## 🗑️ Uninstallation
 
-1. **Remove JRM binary**: `rm /usr/local/bin/jrm`
-2. **Remove JRM directory**: `rm -rf ~/.jrm`
-3. **Edit shell profile**: Remove `eval "$(jrm env)"` from `~/.bashrc` or `~/.zshrc`
-4. **Restart terminal**: Run `source ~/.bashrc` or `source ~/.zshrc`
+1. Remove JRM binary: `rm /usr/local/bin/jrm`
+2. Remove JRM data: `rm -rf ~/.jrm`
+3. Remove `eval "$(jrm env)"` from your shell profile
 
 ## 👀 See Also
 
-- [fnm](https://github.com/Schniz/fnm) - 🚀 Fast and simple Node.js version manager, built in Rust. (JRM is inspired by this project)
-- [@rnm/pm](https://github.com/rnmjs/pm) - 📦 Unified Package Manager for Node.js (npm, yarn, pnpm)
+- [fnm](https://github.com/Schniz/fnm) — Fast Node.js version manager in Rust (JRM is inspired by this)
+- [@rnm/pm](https://github.com/rnmjs/pm) — Unified Package manager for Node.js
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ```bash
-# Clone the repository
 git clone https://github.com/rnmjs/jrm.git
 cd jrm
-
-# Install dependencies
 pnpm install
-
-# Run tests
 pnpm test
-
-# Build the project
 pnpm build
 ```
-
-## ⭐️ Show Your Support
-
-If this project helps you, please give it a ⭐️!
 
 ## 📄 License
 
