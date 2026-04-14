@@ -1,5 +1,11 @@
 # jrm
 
+## 0.3.1
+
+### Patch Changes
+
+- a7ab0db: feat: add `-y, --yes` option for `use` subcommand
+
 ## 0.3.0
 
 ### Minor Changes
