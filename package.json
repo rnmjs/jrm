@@ -2,7 +2,7 @@
   "name": "jrm",
   "version": "0.2.3",
   "private": true,
-  "description": "JavaScript Runtime Version Manager for Node.js, Bun, and Deno.",
+  "description": "A fast and simple version manager for JavaScript runtimes and package managers, supporting Node.js, Bun, Deno, npm, Yarn and pnpm.",
   "type": "module",
   "scripts": {
     "build": "./build.sh",
