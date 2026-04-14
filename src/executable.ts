@@ -9,6 +9,10 @@ import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
 import { isInProject } from "./utils/is-in-project.ts";
 
+interface UseOptions {
+  yes?: boolean;
+}
+
 export interface ExecutableOptions {
   /**
    * Home directory of JRM.
@@ -169,7 +173,10 @@ export abstract class Executable {
     return true;
   }
 
-  async use(versionRange?: string): Promise<string | undefined> {
+  async use(
+    versionRange?: string,
+    options?: UseOptions,
+  ): Promise<string | undefined> {
     // 1. Check if multishell path is set.
     const multishellPath =
       process.env[`JRM_MULTISHELL_PATH_OF_${this.name.toUpperCase()}`];
@@ -187,15 +194,20 @@ export abstract class Executable {
     // 2. Use version.
     if (versionRange) {
       // This is often called manually.
-      return await this.useWithVersionRange(multishellPath, versionRange);
+      return await this.useWithVersionRange(
+        multishellPath,
+        versionRange,
+        options,
+      );
     }
     // This is often called automatically.
-    return await this.useWithoutVersionRange(multishellPath);
+    return await this.useWithoutVersionRange(multishellPath, options);
   }
 
   private async useWithVersionRange(
     multishellPath: string,
     versionRange: string,
+    options?: UseOptions,
   ): Promise<string | undefined> {
     if (!semver.validRange(versionRange)) {
       throw new Error(
@@ -214,11 +226,12 @@ export abstract class Executable {
     }
 
     // 2. Use remote version.
-    return await this.askAndInstall(multishellPath, versionRange);
+    return await this.askAndInstall(multishellPath, versionRange, options?.yes);
   }
 
   private async useWithoutVersionRange(
     multishellPath: string,
+    options?: UseOptions,
   ): Promise<string | undefined> {
     // 1. Initialize multishell.
     const installedVersions = await this.getInstalledVersions();
@@ -269,6 +282,7 @@ export abstract class Executable {
           return await this.askAndInstall(
             multishellPath,
             detected.versionRange,
+            options?.yes,
           );
       }
       // TODO: In strict mode, if askAndInstall returns undefined, we should write stub binaries whose message is "No satisfied version for ${this.name} is installed. Run `jrm use ${this.name}@<version>` to make ${binary} available."
@@ -289,10 +303,13 @@ export abstract class Executable {
   private async askAndInstall(
     multishellPath: string,
     versionRange: string,
+    yes?: boolean,
   ): Promise<string | undefined> {
-    const installAnswer = await ask(
-      `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
-    );
+    const installAnswer = yes
+      ? "yes"
+      : await ask(
+          `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
+        );
     if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
       return undefined;
     }

@@ -73,8 +73,12 @@ program
     "[executables...]",
     "executable specifications (e.g., node@20 bun@1.2.0)",
   )
-  .action(async (specs: string[]) => {
-    await useCommand(parseSpecs(specs));
+  .option("-y, --yes", "skip installation prompts")
+  .action(async (specs: string[], options: { yes?: boolean }) => {
+    // When no specs are provided, useCommand iterates all executables and
+    // auto-installs any missing versions without prompting if --yes is set.
+    // Be aware: this may silently install multiple runtimes/package managers.
+    await useCommand(parseSpecs(specs), options);
   });
 
 program

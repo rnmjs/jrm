@@ -1,25 +1,32 @@
 import process from "node:process";
 import { getAllExecutables, getExecutable } from "../common.ts";
 
-export interface UseCommandOptions {
+export interface ExecutableSpec {
   name: string;
   versionRange: string;
 }
 
-export async function useCommand(options: UseCommandOptions[]): Promise<void> {
+export interface UseCommandFlags {
+  yes?: boolean;
+}
+
+export async function useCommand(
+  specs: ExecutableSpec[],
+  flags?: UseCommandFlags,
+): Promise<void> {
   const items =
-    options.length === 0
+    specs.length === 0
       ? getAllExecutables().map((executable) => ({
           executable,
           versionRange: undefined,
         }))
-      : options.map((option) => ({
-          executable: getExecutable(option.name),
-          versionRange: option.versionRange,
+      : specs.map((spec) => ({
+          executable: getExecutable(spec.name),
+          versionRange: spec.versionRange,
         }));
 
   for (const { executable, versionRange } of items) {
-    const usingVersion = await executable.use(versionRange);
+    const usingVersion = await executable.use(versionRange, flags);
     if (usingVersion) {
       process.stdout.write(`Using ${executable.name}@${usingVersion}\n`);
     }
