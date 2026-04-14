@@ -1,5 +1,11 @@
 # jrm
 
+## 0.3.0
+
+### Minor Changes
+
+- fa743b4: feat: add package manager support (npm, Yarn, pnpm)
+
 ## 0.2.3
 
 ### Patch Changes
