@@ -3,7 +3,7 @@
 [![GitHub license](https://img.shields.io/github/license/rnmjs/jrm)](./LICENSE)
 [![](./badge/coverage.svg)]()
 
-A fast and simple version manager for JavaScript runtimes and package managers.
+A fast and simple version manager for JavaScript runtimes and package managers. Alternative to FNM and Corepack.
 
 **Supported:** Node.js, Bun, Deno, npm, Yarn, pnpm.
 
@@ -25,7 +25,7 @@ chmod +x /usr/local/bin/jrm
 > See [GitHub Releases](https://github.com/rnmjs/jrm/releases) for all platforms.
 
 ```bash
-jrm --version
+jrm --help
 ```
 
 ## 📖 Usage
@@ -38,27 +38,28 @@ Add this to `~/.bashrc` or `~/.zshrc`, then restart your terminal:
 eval "$(jrm env)"
 ```
 
-### 2. Install Versions
+### 2. Use Versions
 
 ```bash
-jrm install node@22 pnpm@9
-```
+# Specific versions (the -y flag skips the interactive confirmation prompt)
+jrm use -y node@18
+jrm use -y bun@1.3.5 deno@2.6.3
 
-### 3. Use Versions
-
-```bash
-# Specific versions
-jrm use node@18
-jrm use node@22.21.1 bun@1.3.5 deno@2.6.3
+node -v # 18.x.x
+bun -v # 1.3.5
+deno -v # 2.6.3
 
 # Package manager versions
-jrm use pnpm@9
-jrm use yarn@4.6.0
+jrm use -y pnpm@9
+jrm use -y yarn@4.6.0
+
+pnpm -v # 9.x.x
+yarn -v # 4.6.0
 ```
 
-### 4. Project Configuration
+### 3. Project Configuration
 
-JRM auto-detects versions when you `cd` into a project. Configure versions using:
+With `eval "$(jrm env)"` enabled, JRM auto-detects versions and uses correct versions when you `cd` into a project. Configure versions using:
 
 **Version files:**
 
@@ -75,19 +76,28 @@ JRM auto-detects versions when you `cd` into a project. Configure versions using
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": ">=20.0.0"
+      "version": "^20.0.0"
     },
     "packageManager": {
       "name": "pnpm",
-      "version": ">=9.0.0"
+      "version": "9.0.0"
     }
   }
 }
 ```
 
-### 5. Other Commands
+```bash
+node -v # 20.x.x
+pnpm -v # 9.0.0
+```
+
+### 4. Other Commands
 
 ```bash
+# Install specific versions
+jrm install node@20
+jrm install bun@1.3.5 deno@2.6.3
+
 # List installed versions
 jrm list
 jrm list node
