@@ -15,10 +15,10 @@ export async function installCommand(
   }));
 
   for (const { executable, versionRange } of items) {
-    const installed = await executable.install(versionRange);
-    if (!installed) {
+    const { version, skipInstalling } = await executable.install(versionRange);
+    if (skipInstalling) {
       process.stdout.write(
-        `${executable.name}@${versionRange} is already installed, skip.\n`,
+        `${executable.name}@${version} is already installed, skip.\n`,
       );
     }
   }

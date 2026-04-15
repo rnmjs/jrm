@@ -144,7 +144,9 @@ export abstract class Executable {
     version: string,
     installDir: string,
   ): Promise<void>;
-  async install(versionRange: string): Promise<boolean> {
+  async install(
+    versionRange: string,
+  ): Promise<{ version: string; skipInstalling: boolean }> {
     let version = semver.valid(versionRange);
     if (!version && !semver.validRange(versionRange)) {
       throw new Error(
@@ -166,11 +168,11 @@ export abstract class Executable {
 
     const installedVersions = await this.getInstalledVersions();
     if (installedVersions.includes(version)) {
-      return false;
+      return { version, skipInstalling: true };
     }
 
     await this.installRaw(version, this.getVersionsDir());
-    return true;
+    return { version, skipInstalling: false };
   }
 
   async use(
@@ -314,16 +316,9 @@ export abstract class Executable {
       return undefined;
     }
 
-    const remoteVersions = await this.getRemoteVersions();
-    const targetVersion = remoteVersions.find((remoteVersion) =>
-      semver.satisfies(remoteVersion, versionRange),
-    );
-    if (!targetVersion) {
-      throw new Error(`No remote version satisfies ${versionRange}.`);
-    }
-    await this.install(targetVersion);
-    await this.createVersionSymlink(targetVersion, multishellPath);
-    return targetVersion;
+    const { version } = await this.install(versionRange);
+    await this.createVersionSymlink(version, multishellPath);
+    return version;
   }
 
   env() {
