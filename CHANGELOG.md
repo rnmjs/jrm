@@ -1,5 +1,11 @@
 # jrm
 
+## 0.3.2
+
+### Patch Changes
+
+- d00ef93: feat: default option for installing prompts is Y now
+
 ## 0.3.1
 
 ### Patch Changes
