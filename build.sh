@@ -10,7 +10,7 @@ pnpm esbuild src/main.cli.ts \
   --format=esm \
   --outfile=dist/jrm.js \
   --minify \
-  --banner:js="globalThis.require ??= (await import('node:module')).createRequire(import.meta.url);"
+  --banner:js="const require = globalThis.require ?? (await import('node:module')).createRequire(import.meta.url);"
 
 mkdir -p assets
 
