@@ -102,7 +102,7 @@ describe("Executable", () => {
 
       const result = await executable.install("2.0.0");
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ version: "2.0.0", skipInstalling: false });
       expect(fs.mkdir).toHaveBeenCalledWith(
         path.join(mockHomedir, ".jrm", "testruntime", "versions"),
         { recursive: true },
@@ -119,7 +119,7 @@ describe("Executable", () => {
 
       const result = await executable.install("2.0.0");
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ version: "2.0.0", skipInstalling: true });
     });
 
     it("should install a version matching a range", async () => {
@@ -128,7 +128,7 @@ describe("Executable", () => {
 
       const result = await executable.install("^2.0.0");
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ version: "2.1.0", skipInstalling: false });
     });
 
     it("should throw error if no remote version satisfies the range", async () => {

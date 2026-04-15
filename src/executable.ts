@@ -309,9 +309,9 @@ export abstract class Executable {
   ): Promise<string | undefined> {
     const installAnswer = yes
       ? "yes"
-      : await ask(
-          `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (y/N): `,
-        );
+      : (await ask(
+          `No installed ${this.name} version satisfies ${versionRange}. Do you want to install one? (Y/n): `,
+        )) || "yes";
     if (!["y", "yes"].includes(installAnswer.toLowerCase())) {
       return undefined;
     }
