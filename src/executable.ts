@@ -119,6 +119,7 @@ export abstract class Executable {
       .stat(downloadedPath)
       .then((stat) => stat.size)
       .catch(() => null);
+    let lastPercentage = -1;
     await download(url, downloadsDir, {
       onResponse: (response) => {
         const contentLength = response.headers.get("content-length");
@@ -130,9 +131,11 @@ export abstract class Executable {
       },
       onProgress: (received, total) => {
         if (total) {
-          process.stdout.write(
-            `\rDownloading ${url}: ${Math.floor((received / total) * 100)}%`,
-          );
+          const percentage = Math.floor((received / total) * 100);
+          if (percentage !== lastPercentage) {
+            process.stdout.write(`\rDownloading ${url}: ${percentage}%`);
+            lastPercentage = percentage;
+          }
         }
       },
     });
