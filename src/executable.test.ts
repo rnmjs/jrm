@@ -467,6 +467,162 @@ describe("Executable", () => {
         expect.stringContaining("not configured"),
       );
     });
+
+    it("should create error stub binaries when strict mode is enabled, detected version exists, and user declines installation", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
+        .mockResolvedValueOnce(["v1.0.0"] as any); // after install (not reached)
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "error",
+        },
+      );
+      vi.mocked(ask).mockResolvedValue("n");
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      expect(ask).toHaveBeenCalled();
+      // Stub binaries should be written with the "no satisfied version" message
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testruntime"),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testbin"),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testtool"),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(multishellPath, "bin", "testruntime"),
+        expect.stringContaining("jrm use 'testruntime@^3.0.0'"),
+      );
+    });
+
+    it("should NOT create error stub binaries when strict mode is enabled, detected version exists, and user accepts installation", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
+        .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "error",
+        },
+      );
+      vi.mocked(ask).mockResolvedValue("y");
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBe("3.0.0");
+      // Should NOT create stub binaries since installation succeeded
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+    });
+
+    it("should NOT create error stub binaries when strict mode is enabled but onFail is warn and user declines", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "warn",
+        },
+      );
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      // warn mode should not trigger stub binaries even in strict mode
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+    });
+
+    it("should NOT create error stub binaries when strict mode is enabled but onFail is ignore", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "ignore",
+        },
+      );
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      // ignore mode should not trigger stub binaries even in strict mode
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+    });
+
+    it("should NOT create error stub binaries in non-strict mode when user declines installation", async () => {
+      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(fs.readdir)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
+        .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
+        .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install (not reached)
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        {
+          versionRange: "^3.0.0",
+          onFail: "error",
+        },
+      );
+      vi.mocked(ask).mockResolvedValue("n");
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should NOT create stub binaries in non-strict mode
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "No installed version of testruntime satisfies the project requirements",
+        ),
+      );
+    });
   });
 
   describe("env", () => {

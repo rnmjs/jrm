@@ -283,14 +283,22 @@ export abstract class Executable {
           );
           return undefined;
         case "error":
-        case "download":
-          return await this.askAndInstall(
+        case "download": {
+          const installedVersion = await this.askAndInstall(
             multishellPath,
             detected.versionRange,
             options?.yes,
           );
+          if (!installedVersion && this.strict) {
+            await this.writeStubBinaries(
+              multishellPath,
+              (binary) =>
+                `No installed version of ${this.name} satisfies the project requirements. Run \`jrm use '${this.name}@${detected.versionRange}'\` to make ${binary} available.`,
+            );
+          }
+          return installedVersion;
+        }
       }
-      // TODO: In strict mode, if askAndInstall returns undefined, we should write stub binaries whose message is "No satisfied version for ${this.name} is installed. Run `jrm use ${this.name}@<version>` to make ${binary} available."
     }
     // Handle not detected version.
     else {
