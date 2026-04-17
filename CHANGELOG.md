@@ -1,5 +1,11 @@
 # jrm
 
+## 0.3.3
+
+### Patch Changes
+
+- ce9dcb1: feat: write stub binaries in strict mode when user declines to install the required version
+
 ## 0.3.2
 
 ### Patch Changes

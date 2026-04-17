@@ -1,6 +1,6 @@
 {
   "name": "jrm",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "A fast and simple version manager for JavaScript runtimes and package managers, supporting Node.js, Bun, Deno, npm, Yarn and pnpm.",
   "type": "module",
