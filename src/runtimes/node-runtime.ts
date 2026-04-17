@@ -28,11 +28,9 @@ export class NodeRuntime extends Executable {
 
     const downloadedPath = await this.downloadToLocal(url);
 
-    await decompress(downloadedPath, installDir);
-    await fs.rename(
-      path.join(installDir, `node-v${version}-${os.platform()}-${os.arch()}`),
-      path.join(installDir, `v${version}`),
-    );
+    await decompress(downloadedPath, path.join(installDir, `v${version}`), {
+      strip: 1,
+    });
     await fs.rm(downloadedPath);
   }
 }

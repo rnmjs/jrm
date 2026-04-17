@@ -61,4 +61,15 @@ describe("download", () => {
     expect(await exists(downloadedFilePath)).toBe(true);
     expect(path.basename(downloadedFilePath)).toBe(expectedFileName);
   });
+
+  it("should skip download when onResponse returns false", async () => {
+    await download(testUrl, testDir, {
+      onResponse: () => false,
+    });
+
+    const fileName = path.basename(new URL(testUrl).pathname);
+    const downloadedFilePath = path.join(testDir, fileName);
+
+    expect(await exists(downloadedFilePath)).toBe(false);
+  });
 });
