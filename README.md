@@ -5,7 +5,10 @@
 
 A fast and simple version manager for JavaScript runtimes and package managers. Alternative to FNM and Corepack.
 
-**Supported:** Node.js, Bun, Deno, npm, Yarn, pnpm.
+- **Supported Runtimes:** Node.js, Bun, Deno
+- **Supported Package Managers:** npm, Yarn, pnpm
+- **Supported Platforms:** macOS, Linux
+- **Supported Shells:** bash, zsh
 
 ## ✨ Features
 
@@ -66,7 +69,7 @@ With `eval "$(jrm env)"` enabled, JRM auto-detects versions and uses correct ver
 ```bash
 .node-version    # Node.js
 .bun-version     # Bun
-.deno-version     # Deno
+.deno-version    # Deno
 ```
 
 **Or `package.json` devEngines:**
