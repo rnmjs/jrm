@@ -260,4 +260,91 @@ describe("PackageManagerDetector", () => {
 
     expect(result).toEqual({ versionRange: "4.6.0" });
   });
+
+  it("should detect version from .jrmrc.json", async () => {
+    const detector = new PackageManagerDetector("pnpm");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith(".jrmrc.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        packageManager: {
+          name: "pnpm",
+          version: ">=9.0.0",
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=9.0.0", onFail: undefined });
+  });
+
+  it("should detect version from jrm.config.json when .jrmrc.json not exists", async () => {
+    const detector = new PackageManagerDetector("pnpm");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("jrm.config.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        packageManager: {
+          name: "pnpm",
+          version: ">=8.0.0",
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=8.0.0", onFail: undefined });
+  });
+
+  it("should prefer .jrmrc.json over jrm.config.json", async () => {
+    const detector = new PackageManagerDetector("pnpm");
+    vi.mocked(exists).mockResolvedValue(true);
+    // eslint-disable-next-line @typescript-eslint/require-await -- Mock
+    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
+      if (typeof filePath === "string" && filePath.includes(".jrmrc.json")) {
+        return JSON.stringify({
+          packageManager: { name: "pnpm", version: "9.0.0" },
+        });
+      }
+      return JSON.stringify({
+        packageManager: { name: "pnpm", version: "8.0.0" },
+      });
+    });
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: "9.0.0" });
+  });
+
+  it("should fallback to package.json when config has no matching pm", async () => {
+    const detector = new PackageManagerDetector("pnpm");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(
+          filePath.endsWith(".jrmrc.json") || filePath.endsWith("package.json"),
+        ),
+    );
+    // eslint-disable-next-line @typescript-eslint/require-await -- Mock
+    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
+      if (typeof filePath === "string" && filePath.includes(".jrmrc.json")) {
+        return JSON.stringify({
+          packageManager: { name: "yarn", version: "4.0.0" },
+        });
+      }
+      return JSON.stringify({
+        devEngines: {
+          packageManager: { name: "pnpm", version: ">=9.0.0" },
+        },
+      });
+    });
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=9.0.0" });
+  });
 });

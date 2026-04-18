@@ -13,7 +13,7 @@ A fast and simple version manager for JavaScript runtimes and package managers. 
 ## ✨ Features
 
 - 🚀 **Fast & Lightweight** — Written in TypeScript, bundled with esbuild
-- 🎯 **Auto-Detection** — Automatically detects versions from project files and `package.json`
+- 🎯 **Auto-Detection** — Automatically detects versions from `package.json`
 - 📦 **Version Range Support** — Use semver ranges like `node@>=20`
 - 🌐 **Custom Registry** — Respects your npm registry configuration
 
@@ -64,12 +64,19 @@ yarn -v # 4.6.0
 
 With `eval "$(jrm env)"` enabled, JRM auto-detects versions and uses correct versions when you `cd` into a project. Configure versions using:
 
-**Version files:**
+**JRM config file (`.jrmrc.json` or `jrm.config.json`):**
 
-```bash
-.node-version    # Node.js
-.bun-version     # Bun
-.deno-version    # Deno
+```json
+{
+  "runtime": {
+    "name": "node",
+    "version": "^20.0.0"
+  },
+  "packageManager": {
+    "name": "pnpm",
+    "version": "9.0.0"
+  }
+}
 ```
 
 **Or `package.json` devEngines:**
@@ -88,6 +95,8 @@ With `eval "$(jrm env)"` enabled, JRM auto-detects versions and uses correct ver
   }
 }
 ```
+
+Priority order: `package.json` devEngines > `.jrmrc.json` > `jrm.config.json`.
 
 ```bash
 node -v # 20.x.x

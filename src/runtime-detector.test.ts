@@ -15,19 +15,6 @@ describe("RuntimeDetector", () => {
     vi.restoreAllMocks();
   });
 
-  it("should detect version from .{name}-version file", async () => {
-    const detector = new RuntimeDetector("node");
-    vi.mocked(exists).mockImplementation(
-      async (filePath: string) =>
-        await Promise.resolve(filePath.endsWith(".node-version")),
-    );
-    vi.mocked(fs.readFile).mockResolvedValue("18.0.0\n");
-
-    const result = await detector.detectVersionRange("/test/dir");
-
-    expect(result).toEqual({ versionRange: "18.0.0" });
-  });
-
   it("should detect version from package.json with single runtime", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
@@ -80,45 +67,6 @@ describe("RuntimeDetector", () => {
     expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
   });
 
-  it("should prioritize .{name}-version file over package.json", async () => {
-    const detector = new RuntimeDetector("node");
-    vi.mocked(exists).mockResolvedValue(true);
-    // eslint-disable-next-line @typescript-eslint/require-await -- for test
-    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
-      if (typeof filePath !== "string") {
-        throw new Error("filePath is not a string");
-      }
-      if (filePath.endsWith(".node-version")) {
-        return "20.0.0";
-      }
-      return JSON.stringify({
-        devEngines: {
-          runtime: { name: "node", version: ">=16.0.0" },
-        },
-      });
-    });
-
-    const result = await detector.detectVersionRange("/test/dir");
-
-    expect(result).toEqual({ versionRange: "20.0.0" });
-  });
-
-  it("should search parent directories when no version file found", async () => {
-    const detector = new RuntimeDetector("node");
-    let callCount = 0;
-    // eslint-disable-next-line @typescript-eslint/require-await -- for test
-    vi.mocked(exists).mockImplementation(async (filePath: string) => {
-      callCount += 1;
-      return callCount > 2 && filePath.endsWith(".node-version");
-    });
-
-    vi.mocked(fs.readFile).mockResolvedValue("18.0.0");
-
-    const result = await detector.detectVersionRange("/test/dir/sub/nested");
-
-    expect(result).toEqual({ versionRange: "18.0.0" });
-  });
-
   it("should return undefined when no version file found in any parent directory", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(false);
@@ -167,33 +115,6 @@ describe("RuntimeDetector", () => {
     const version = await detector.detectVersionRange("/test/dir");
 
     expect(version).toBeUndefined();
-  });
-
-  it("should handle version file with whitespace", async () => {
-    const detector = new RuntimeDetector("node");
-    vi.mocked(exists).mockImplementation(
-      async (filePath: string) =>
-        await Promise.resolve(filePath.endsWith(".node-version")),
-    );
-    vi.mocked(fs.readFile).mockResolvedValue("  18.0.0  \n");
-
-    const result = await detector.detectVersionRange("/test/dir");
-
-    expect(result).toEqual({ versionRange: "18.0.0" });
-  });
-
-  it("should work with different runtime names", async () => {
-    const bunDetector = new RuntimeDetector("bun");
-
-    vi.mocked(exists).mockImplementation(
-      async (filePath: string) =>
-        await Promise.resolve(filePath.endsWith(".bun-version")),
-    );
-    vi.mocked(fs.readFile).mockResolvedValue("1.0.0");
-
-    const result = await bunDetector.detectVersionRange("/test/dir");
-
-    expect(result).toEqual({ versionRange: "1.0.0" });
   });
 
   it("should detect onFail from package.json", async () => {
@@ -295,5 +216,92 @@ describe("RuntimeDetector", () => {
     const version = await detector.detectVersionRange("/");
 
     expect(version).toBeUndefined();
+  });
+
+  it("should detect version from .jrmrc.json", async () => {
+    const detector = new RuntimeDetector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith(".jrmrc.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        runtime: {
+          name: "node",
+          version: ">=20.0.0",
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=20.0.0", onFail: undefined });
+  });
+
+  it("should detect version from jrm.config.json when .jrmrc.json not exists", async () => {
+    const detector = new RuntimeDetector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("jrm.config.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        runtime: {
+          name: "node",
+          version: ">=18.0.0",
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
+  });
+
+  it("should prefer .jrmrc.json over jrm.config.json", async () => {
+    const detector = new RuntimeDetector("node");
+    vi.mocked(exists).mockResolvedValue(true);
+    // eslint-disable-next-line @typescript-eslint/require-await -- Mock
+    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
+      if (typeof filePath === "string" && filePath.includes(".jrmrc.json")) {
+        return JSON.stringify({
+          runtime: { name: "node", version: "20.0.0" },
+        });
+      }
+      return JSON.stringify({
+        runtime: { name: "node", version: "18.0.0" },
+      });
+    });
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: "20.0.0" });
+  });
+
+  it("should fallback to package.json when config has no matching runtime", async () => {
+    const detector = new RuntimeDetector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(
+          filePath.endsWith(".jrmrc.json") || filePath.endsWith("package.json"),
+        ),
+    );
+    // eslint-disable-next-line @typescript-eslint/require-await -- Mock
+    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
+      if (typeof filePath === "string" && filePath.includes(".jrmrc.json")) {
+        return JSON.stringify({
+          runtime: { name: "bun", version: "1.0.0" },
+        });
+      }
+      return JSON.stringify({
+        devEngines: {
+          runtime: { name: "node", version: ">=18.0.0" },
+        },
+      });
+    });
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ versionRange: ">=18.0.0" });
   });
 });

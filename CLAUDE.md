@@ -23,12 +23,12 @@ pnpm style:update               # Code style check + update
 
 ### Core Structure
 
-- `src/main.cli.ts` — CLI entry point (Commander.js), registers `env`, `install`, `list`, `use`, `uninstall` subcommands
-- `src/executable.ts` — Abstract base class (`Executable`) with install, use, list, uninstall, env, download, and strict mode logic; all runtimes and package managers extend this
-- `src/detector.ts` — Abstract base class (`Detector`) defining the `detectVersionRange()` interface
-- `src/runtime-detector.ts` — Auto-detects runtime versions from `.{runtime}-version` files and `package.json` `devEngines.runtime`, recursing up parent directories
-- `src/package-manager-detector.ts` — Auto-detects package manager versions from `package.json` `devEngines.packageManager`, recursing up parent directories
-- `src/common.ts` — Registry managing all supported runtimes (Node.js, Bun, Deno) and package managers (npm, Yarn, pnpm)
+- `src/main.cli.ts` — CLI entry point, registers subcommands
+- `src/executable.ts` — Abstract base class for all runtimes and package managers
+- `src/detector.ts` — Abstract base class for version auto-detection, handles `.jrmrc.json` / `jrm.config.json` / `devEngines`
+- `src/runtime-detector.ts` — Runtime version detection
+- `src/package-manager-detector.ts` — Package manager version detection
+- `src/common.ts` — Central registry of supported runtimes and package managers
 
 ### Module Organization
 
@@ -42,7 +42,7 @@ pnpm style:update               # Code style check + update
 1. **Executable Base Class**: `Executable` is abstract with `getRemoteVersionsRaw()` and `installRaw()` as required methods for subclasses. Supports semver range resolution, interactive prompts, and strict mode (generates error stub binaries when a project lacks configuration).
 2. **Version Storage**: Versions stored in `~/.jrm/{executable}/versions/v{version}`, managed via symlinks.
 3. **Multi-Shell Support**: Creates unique directories per process with timestamps to avoid env conflicts.
-4. **Auto-Detection**: Recursive directory traversal upward looking for version config files.
+4. **Auto-Detection**: Recursive upward traversal checking `package.json` devEngines > `.jrmrc.json` > `jrm.config.json`, with priority ordering.
 
 ## Build
 
