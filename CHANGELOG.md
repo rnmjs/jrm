@@ -1,5 +1,11 @@
 # jrm
 
+## 0.4.0
+
+### Minor Changes
+
+- 6adb056: feat: support `.jrmrc.json` and `jrm.config.json` for version auto-detection, remove `.runtime-version` file support
+
 ## 0.3.3
 
 ### Patch Changes
