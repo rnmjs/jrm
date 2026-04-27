@@ -1,5 +1,11 @@
 # jrm
 
+## 0.4.2
+
+### Patch Changes
+
+- 8c4b749: fix: handle empty string as bash
+
 ## 0.4.1
 
 ### Patch Changes
