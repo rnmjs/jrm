@@ -1,5 +1,11 @@
 # jrm
 
+## 0.4.1
+
+### Patch Changes
+
+- 6781e3b: fix: use `add-zsh-hook` instead of directly overwriting `chpwd` in zsh env hook
+
 ## 0.4.0
 
 ### Minor Changes
