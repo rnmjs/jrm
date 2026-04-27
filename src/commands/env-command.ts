@@ -56,6 +56,7 @@ export function envCommand(): void {
       print(handleZsh(envs));
       break;
     case "bash":
+    case "":
       print(handleBash(envs));
       break;
     default:

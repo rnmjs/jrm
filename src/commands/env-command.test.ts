@@ -79,6 +79,27 @@ alias cd=__jrmcd
     );
   });
 
+  it("should output bash environment when SHELL is empty or unset", () => {
+    process.env["SHELL"] = "";
+
+    envCommand();
+
+    expect(process.stdout.write).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(process.stdout.write).mock.calls[0]?.[0]).toBe(
+      `export JRM_MULTISHELL_PATH_OF_NODE="/home/testuser/.jrm/node/multishells/test"
+export JRM_MULTISHELL_PATH_OF_PNPM="/home/testuser/.jrm/pnpm/multishells/test"
+jrm use
+export PATH="$JRM_MULTISHELL_PATH_OF_NODE/bin:$JRM_MULTISHELL_PATH_OF_PNPM/bin:$PATH"
+
+__jrmcd() {
+  \\cd "$@" || return $?
+  jrm use
+}
+alias cd=__jrmcd
+`,
+    );
+  });
+
   it("should throw error for unsupported shell", () => {
     process.env["SHELL"] = "/bin/fish";
 
