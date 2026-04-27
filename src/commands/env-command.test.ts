@@ -49,9 +49,11 @@ export JRM_MULTISHELL_PATH_OF_PNPM="/home/testuser/.jrm/pnpm/multishells/test"
 jrm use
 export PATH="$JRM_MULTISHELL_PATH_OF_NODE/bin:$JRM_MULTISHELL_PATH_OF_PNPM/bin:$PATH"
 
-chpwd() {
+jrm__chpwd() {
   jrm use
 }
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd jrm__chpwd
 `,
     );
   });

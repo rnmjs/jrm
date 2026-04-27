@@ -17,11 +17,14 @@ function handleZsh(envs: Record<string, string>): string {
     `export PATH="${Object.keys(envs)
       .map((k) => `$${k}/bin`)
       .join(":")}:$PATH"`,
-    // Set up cd hook.
+    // Set up cd hook (non-destructive, idempotent).
+    // Reference: https://unix.stackexchange.com/questions/214296/what-is-the-difference-between-autoload-and-autoload-u-in-zsh
     `
-chpwd() {
+jrm__chpwd() {
   jrm use
-}`,
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd jrm__chpwd`,
   ].join("\n");
 }
 
