@@ -26,7 +26,7 @@
     "@types/semver": "7.7.1",
     "@vitest/coverage-v8": "4.1.5",
     "esbuild": "0.28.0",
-    "fenge": "0.13.3",
+    "fenge": "0.14.0",
     "make-coverage-badge": "1.2.0",
     "typescript": "6.0.3",
     "vitest": "4.1.5"
