@@ -23,7 +23,7 @@ declare -A platforms=(
 
 if [ -n "$CI" ]; then
   # In CI: install deno as before
-  curl -fsSL https://deno.land/install.sh | sh -s v2.6.5
+  curl -fsSL https://deno.land/install.sh | sh -s v2.7.14
   DENO_CMD="$HOME/.deno/bin/deno"
 else
   # Not in CI: check if deno command exists
@@ -52,4 +52,4 @@ for target in "${!platforms[@]}"; do
 done
 
 echo "Build completed! Generated binaries:"
-ls -la assets/
+ls -lah assets/

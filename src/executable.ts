@@ -95,7 +95,7 @@ export abstract class Executable {
       .filter((file) => file.startsWith("v"))
       .map((file) => file.slice(1))
       .filter((version) => semver.valid(version))
-      .sort((x, y) => semver.compare(y, x));
+      .toSorted((x, y) => semver.compare(y, x));
   }
 
   protected abstract getRemoteVersionsRaw(): Promise<string[]>;
@@ -103,7 +103,7 @@ export abstract class Executable {
     return (await this.getRemoteVersionsRaw())
       .map((v) => v.replace(/^v/, ""))
       .filter((version) => semver.parse(version)?.prerelease.length === 0)
-      .sort((x, y) => semver.compare(y, x));
+      .toSorted((x, y) => semver.compare(y, x));
   }
 
   protected async downloadToLocal(url: string): Promise<string> {
