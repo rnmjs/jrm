@@ -1,5 +1,13 @@
 # jrm
 
+## 0.4.3
+
+### Patch Changes
+
+- b515001: fix: continue processing remaining executables when one fails in use command
+
+  Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+
 ## 0.4.2
 
 ### Patch Changes
