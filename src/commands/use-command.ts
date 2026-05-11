@@ -25,10 +25,20 @@ export async function useCommand(
           versionRange: spec.versionRange,
         }));
 
+  const errors: unknown[] = [];
+
   for (const { executable, versionRange } of items) {
-    const usingVersion = await executable.use(versionRange, flags);
-    if (usingVersion) {
-      process.stdout.write(`Using ${executable.name}@${usingVersion}\n`);
+    try {
+      const usingVersion = await executable.use(versionRange, flags);
+      if (usingVersion) {
+        process.stdout.write(`Using ${executable.name}@${usingVersion}\n`);
+      }
+    } catch (error) {
+      errors.push(error);
     }
+  }
+
+  if (errors.length > 0) {
+    throw new AggregateError(errors, "Some executables failed to use.");
   }
 }
