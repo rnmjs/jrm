@@ -65,9 +65,11 @@ export abstract class Executable {
     for (const binary of [...this.bundledBinaries, this.name]) {
       await fs.writeFile(
         path.join(targetDir, "bin", binary),
-        ["#!/usr/bin/env bash", `echo '${getMessage(binary)}'`, "exit 1"].join(
-          "\n",
-        ),
+        [
+          "#!/usr/bin/env bash",
+          `echo '${getMessage(binary)}' >&2`,
+          "exit 1",
+        ].join("\n"),
       );
       await fs.chmod(path.join(targetDir, "bin", binary), 0o755);
     }
