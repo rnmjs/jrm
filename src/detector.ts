@@ -8,6 +8,8 @@ export interface VersionDetectResult {
 }
 
 export abstract class Detector {
+  protected abstract readonly type: "runtime" | "packageManager";
+
   protected readonly name: string;
   constructor(name: string) {
     this.name = name;
@@ -27,9 +29,14 @@ export abstract class Detector {
     return undefined;
   }
 
-  protected abstract handle(
+  protected async handle(
     dirPath: string,
-  ): Promise<VersionDetectResult | undefined>;
+  ): Promise<VersionDetectResult | undefined> {
+    return (
+      (await this.handlePkgDevEngines(dirPath, this.type)) ??
+      (await this.handleConfig(dirPath, this.type))
+    );
+  }
 
   private resolveVersionFromRaw(raw: unknown): VersionDetectResult | undefined {
     const items: {
