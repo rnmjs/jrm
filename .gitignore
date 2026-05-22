@@ -8,3 +8,4 @@ node-compile-cache
 coverage
 assets
 *.local.*
+docs
