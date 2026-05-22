@@ -10,6 +10,10 @@ JRM (JavaScript Runtime Manager) is a fast and lightweight version manager for J
 
 @package.json
 
+## Common Scripts
+
+Read `scripts` field of `package.json` for common scripts.
+
 ### Core Structure
 
 - `src/main.cli.ts` — CLI entry point, registers subcommands
