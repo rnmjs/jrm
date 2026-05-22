@@ -1,5 +1,15 @@
 # jrm
 
+## 0.5.0
+
+### Minor Changes
+
+- b014304: feat!: only trigger strict mode stub binaries when executable is explicitly excluded
+
+### Patch Changes
+
+- e052fdf: fix: write stub binary messages to stderr instead of stdout
+
 ## 0.4.3
 
 ### Patch Changes
