@@ -1,13 +1,13 @@
 {
   "name": "jrm",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "private": true,
   "description": "A fast and simple version manager for JavaScript runtimes and package managers, supporting Node.js, Bun, Deno, npm, Yarn and pnpm.",
   "type": "module",
   "scripts": {
     "build": "./build.sh",
     "prepare": "fenge install",
-    "release": "pnpm build",
+    "release": "echo 'No npm publish, so we do nothing in release script'",
     "style": "fenge",
     "style:update": "fenge -u",
     "test": "pnpm style && tsc --noEmit && vitest run --coverage --coverage.reporter=json-summary --coverage.reporter=html && make-coverage-badge --output-path badge/coverage.svg"
