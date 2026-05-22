@@ -1,32 +1,21 @@
 import type { Executable } from "./executable.ts";
-import { PackageManagerDetector } from "./package-manager-detector.ts";
 import { NpmPackageManager } from "./package-managers/npm.ts";
 import { PnpmPackageManager } from "./package-managers/pnpm.ts";
 import { YarnPackageManager } from "./package-managers/yarn.ts";
-import { RuntimeDetector } from "./runtime-detector.ts";
 import { BunRuntime } from "./runtimes/bun-runtime.ts";
 import { DenoRuntime } from "./runtimes/deno-runtime.ts";
 import { NodeRuntime } from "./runtimes/node-runtime.ts";
 
 const ALL_RUNTIMES: Executable[] = [
-  new NodeRuntime({ DetectorClass: RuntimeDetector }),
-  new BunRuntime({ DetectorClass: RuntimeDetector }),
-  new DenoRuntime({ DetectorClass: RuntimeDetector }),
+  new NodeRuntime(),
+  new BunRuntime(),
+  new DenoRuntime(),
 ];
 
 const ALL_PACKAGE_MANAGERS: Executable[] = [
-  new NpmPackageManager({
-    DetectorClass: PackageManagerDetector,
-    strict: true,
-  }),
-  new YarnPackageManager({
-    DetectorClass: PackageManagerDetector,
-    strict: true,
-  }),
-  new PnpmPackageManager({
-    DetectorClass: PackageManagerDetector,
-    strict: true,
-  }),
+  new NpmPackageManager({ strict: true }),
+  new YarnPackageManager({ strict: true }),
+  new PnpmPackageManager({ strict: true }),
 ];
 
 export function getAllExecutables(): Executable[] {

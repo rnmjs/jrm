@@ -18,9 +18,7 @@ Read `scripts` field of `package.json` for common scripts.
 
 - `src/main.cli.ts` — CLI entry point, registers subcommands
 - `src/executable.ts` — Abstract base class for all runtimes and package managers
-- `src/detector.ts` — Abstract base class for version auto-detection, handles `.jrmrc.json` / `jrm.config.json` / `devEngines`
-- `src/runtime-detector.ts` — Runtime version detection
-- `src/package-manager-detector.ts` — Package manager version detection
+- `src/detector.ts` — Version auto-detection, handles `.jrmrc.json` / `jrm.config.json` / `devEngines` for both runtime and packageManager types
 - `src/common.ts` — Central registry of supported runtimes and package managers
 
 ### Module Organization

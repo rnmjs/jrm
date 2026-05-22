@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Detector } from "./detector.ts";
 import { Executable } from "./executable.ts";
-import { RuntimeDetector } from "./runtime-detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
@@ -26,7 +26,7 @@ vi.mock("node:process", () => ({
     },
   },
 }));
-vi.mock("./runtime-detector.ts");
+vi.mock("./detector.ts");
 vi.mock("./utils/ask.ts");
 vi.mock("./utils/download.ts");
 vi.mock("./utils/exists.ts");
@@ -98,7 +98,7 @@ describe("Executable", () => {
 
   describe("install", () => {
     it("should install a specific version", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.install("2.0.0");
@@ -115,7 +115,7 @@ describe("Executable", () => {
     });
 
     it("should not reinstall an already installed version", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
 
       const result = await executable.install("2.0.0");
@@ -124,7 +124,7 @@ describe("Executable", () => {
     });
 
     it("should install a version matching a range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.install("^2.0.0");
@@ -133,7 +133,7 @@ describe("Executable", () => {
     });
 
     it("should throw error if no remote version satisfies the range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       await expect(executable.install("^99.0.0")).rejects.toThrow(
@@ -142,7 +142,7 @@ describe("Executable", () => {
     });
 
     it("should install without creating aliases", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       await executable.install("2.0.0");
@@ -159,7 +159,7 @@ describe("Executable", () => {
     });
 
     it("should throw error if multishell path env is not set", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = undefined;
 
       await expect(executable.use("2.0.0")).rejects.toThrow(
@@ -168,7 +168,7 @@ describe("Executable", () => {
     });
 
     it("should throw error if multishell path is not absolute", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = "relative/path";
 
       await expect(executable.use("2.0.0")).rejects.toThrow(
@@ -177,7 +177,7 @@ describe("Executable", () => {
     });
 
     it("should use installed version that matches range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0"] as any);
 
       const result = await executable.use("2.0.0");
@@ -187,11 +187,11 @@ describe("Executable", () => {
     });
 
     it("should create placeholder binaries when no default version exists", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(exists).mockResolvedValue(false);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "no-config" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "no-config",
+      });
 
       const result = await executable.use();
 
@@ -206,11 +206,11 @@ describe("Executable", () => {
     });
 
     it("should return undefined when no version range is detected", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(exists).mockResolvedValue(false);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "no-config" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "no-config",
+      });
 
       const result = await executable.use();
 
@@ -218,18 +218,16 @@ describe("Executable", () => {
     });
 
     it("should return undefined when onFail is ignore", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
       );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "ignore",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "ignore",
+      });
 
       const result = await executable.use();
 
@@ -238,19 +236,17 @@ describe("Executable", () => {
     });
 
     it("should print warning and return undefined when onFail is warn", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
         path.join(mockHomedir, ".jrm", "testruntime", "versions", "v1.0.0"),
       );
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "warn",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "warn",
+      });
 
       const result = await executable.use();
 
@@ -262,7 +258,7 @@ describe("Executable", () => {
     });
 
     it("should prompt to install when onFail is error", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
@@ -272,12 +268,10 @@ describe("Executable", () => {
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "error",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "error",
+      });
       vi.mocked(ask).mockResolvedValue("y");
 
       const result = await executable.use();
@@ -287,7 +281,7 @@ describe("Executable", () => {
     });
 
     it("should prompt to install when onFail is download", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.realpath).mockResolvedValue(
@@ -297,12 +291,10 @@ describe("Executable", () => {
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v1.0.0"] as any)
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "download",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "download",
+      });
       vi.mocked(ask).mockResolvedValue("y");
 
       const result = await executable.use();
@@ -312,7 +304,7 @@ describe("Executable", () => {
     });
 
     it("should use installed version if it satisfies range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0", "v1.0.0"] as any);
 
       const result = await executable.use("^2.0.0");
@@ -321,7 +313,7 @@ describe("Executable", () => {
     });
 
     it("should prompt to install if no installed version satisfies range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir)
         .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell
         .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithVersionRange
@@ -335,7 +327,7 @@ describe("Executable", () => {
     });
 
     it("should return undefined if user declines installation", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
       vi.mocked(ask).mockResolvedValue("n");
 
@@ -345,7 +337,7 @@ describe("Executable", () => {
     });
 
     it("should throw error if no remote version satisfies range", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
       vi.mocked(ask).mockResolvedValue("y");
 
@@ -365,12 +357,11 @@ describe("Executable", () => {
     it("should create error stub binaries when strict mode is enabled, in project, and detected reason is name-not-matched", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "name-not-matched" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "name-not-matched",
+      });
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.use(undefined);
@@ -408,12 +399,11 @@ describe("Executable", () => {
     it("should NOT create error stub binaries when strict mode is enabled but reason is no-config", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "no-config" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "no-config",
+      });
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.use(undefined);
@@ -431,12 +421,11 @@ describe("Executable", () => {
     it("should NOT create error stub binaries when strict mode is enabled but reason is no-type-field", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "no-type-field" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "no-type-field",
+      });
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.use(undefined);
@@ -454,14 +443,11 @@ describe("Executable", () => {
     it("should proceed normally when strict mode is enabled but version is configured", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "1.0.0",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "1.0.0",
+      });
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
 
       const result = await executable.use(undefined);
@@ -478,12 +464,11 @@ describe("Executable", () => {
     it("should proceed normally when strict mode is enabled but not in project", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(false);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "name-not-matched" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "name-not-matched",
+      });
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.use(undefined);
@@ -497,11 +482,11 @@ describe("Executable", () => {
     });
 
     it("should skip strict mode check when strict option is not set", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(isInProject).mockResolvedValue(true);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        { reason: "name-not-matched" },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        reason: "name-not-matched",
+      });
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await executable.use(undefined);
@@ -517,19 +502,16 @@ describe("Executable", () => {
     it("should create error stub binaries when strict mode is enabled, detected version exists, and user declines installation", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(fs.readdir)
         .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
         .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
         .mockResolvedValueOnce(["v1.0.0"] as any); // after install (not reached)
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "error",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "error",
+      });
       vi.mocked(ask).mockResolvedValue("n");
 
       const result = await executable.use(undefined);
@@ -564,19 +546,16 @@ describe("Executable", () => {
     it("should NOT create error stub binaries when strict mode is enabled, detected version exists, and user accepts installation", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(fs.readdir)
         .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
         .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "error",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "error",
+      });
       vi.mocked(ask).mockResolvedValue("y");
 
       const result = await executable.use(undefined);
@@ -594,16 +573,13 @@ describe("Executable", () => {
     it("should NOT create error stub binaries when strict mode is enabled but onFail is warn and user declines", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "warn",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "warn",
+      });
 
       const result = await executable.use(undefined);
 
@@ -620,16 +596,13 @@ describe("Executable", () => {
     it("should NOT create error stub binaries when strict mode is enabled but onFail is ignore", async () => {
       const executable = new TestExecutable({
         strict: true,
-        DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(fs.readdir).mockResolvedValue(["v1.0.0"] as any);
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "ignore",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "ignore",
+      });
 
       const result = await executable.use(undefined);
 
@@ -644,18 +617,16 @@ describe("Executable", () => {
     });
 
     it("should NOT create error stub binaries in non-strict mode when user declines installation", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(fs.readdir)
         .mockResolvedValueOnce(["v1.0.0"] as any) // initialize multishell (default version)
         .mockResolvedValueOnce(["v1.0.0"] as any) // installed versions check in useWithoutVersionRange
         .mockResolvedValueOnce(["v3.0.0", "v1.0.0"] as any); // after install (not reached)
-      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        {
-          versionRange: "^3.0.0",
-          onFail: "error",
-        },
-      );
+      vi.mocked(Detector.prototype.detectVersionRange).mockResolvedValue({
+        versionRange: "^3.0.0",
+        onFail: "error",
+      });
       vi.mocked(ask).mockResolvedValue("n");
 
       const result = await executable.use(undefined);
@@ -673,7 +644,7 @@ describe("Executable", () => {
 
   describe("env", () => {
     it("should return environment variables", () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       const env = executable.env();
 
       expect(env).toHaveProperty("JRM_MULTISHELL_PATH_OF_TESTRUNTIME");
@@ -686,7 +657,7 @@ describe("Executable", () => {
 
   describe("list", () => {
     it("should list installed versions", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue(["v2.0.0", "v1.0.0"] as any);
 
       const result = await executable.list();
@@ -703,7 +674,7 @@ describe("Executable", () => {
     });
 
     it("should mark currently using version", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       const multishellPath = path.join(
         mockHomedir,
         ".jrm",
@@ -724,7 +695,7 @@ describe("Executable", () => {
     });
 
     it("should list installed versions", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValueOnce(["v1.0.0"] as any); // versions
 
       const result = await executable.list();
@@ -736,7 +707,7 @@ describe("Executable", () => {
 
   describe("uninstall", () => {
     it("should uninstall an installed version", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(exists).mockResolvedValue(true);
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
@@ -750,7 +721,7 @@ describe("Executable", () => {
     });
 
     it("should return false if version is not installed", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(exists).mockResolvedValue(false);
 
       const result = await executable.uninstall("2.0.0");
@@ -760,7 +731,7 @@ describe("Executable", () => {
     });
 
     it("should throw error for invalid version", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
 
       await expect(executable.uninstall("invalid")).rejects.toThrow(
         "Invalid version: invalid. Expected a valid semver (e.g., 20.0.0).",
@@ -770,7 +741,7 @@ describe("Executable", () => {
 
   describe("downloadToLocal", () => {
     it("should download file and return the downloaded path", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(download).mockResolvedValue(undefined);
       vi.mocked(fs.stat).mockRejectedValue(new Error("File not found"));
 
@@ -798,7 +769,7 @@ describe("Executable", () => {
     });
 
     it("should skip download when local file size matches content-length", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.stat).mockResolvedValue({ size: 1024 } as any);
       // eslint-disable-next-line @typescript-eslint/require-await -- mockImplementation needs async to match the download function signature
       vi.mocked(download).mockImplementation(async (_url, _dest, options) => {
@@ -819,7 +790,7 @@ describe("Executable", () => {
     });
 
     it("should proceed with download when local file size differs from content-length", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.stat).mockResolvedValue({ size: 512 } as any);
       // eslint-disable-next-line @typescript-eslint/require-await -- mockImplementation needs async to match the download function signature
       vi.mocked(download).mockImplementation(async (_url, _dest, options) => {
@@ -840,7 +811,7 @@ describe("Executable", () => {
     });
 
     it("should throw error when URL has no filename", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
 
       await expect(
         executable.testDownloadToLocal("https://example.com/"),
@@ -850,7 +821,7 @@ describe("Executable", () => {
 
   describe("getRemoteVersions", () => {
     it("should filter out prerelease versions", async () => {
-      const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
+      const executable = new TestExecutable();
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
       await executable.install("^2.0.0");

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import semver from "semver";
-import type { Detector } from "./detector.ts";
+import { Detector } from "./detector.ts";
 import { ask } from "./utils/ask.ts";
 import { download } from "./utils/download.ts";
 import { exists } from "./utils/exists.ts";
@@ -19,7 +19,6 @@ export interface ExecutableOptions {
    */
   home?: string;
   strict?: boolean;
-  DetectorClass: new (name: string) => Detector;
 }
 
 export abstract class Executable {
@@ -31,12 +30,10 @@ export abstract class Executable {
   protected abstract readonly bundledBinaries: string[];
   private readonly home: string;
   private readonly strict: boolean;
-  private readonly DetectorClass: new (name: string) => Detector;
 
-  constructor(options: ExecutableOptions) {
+  constructor(options: ExecutableOptions = {}) {
     this.home = options.home ?? path.join(os.homedir(), ".jrm");
     this.strict = options.strict ?? false;
-    this.DetectorClass = options.DetectorClass;
   }
 
   private getDownloadsDir() {
@@ -260,9 +257,10 @@ export abstract class Executable {
     // 3. When inside of project, there are 2 cases:
     // - Detected version. If detected version, use installed version -> use remote version.
     // - Not detected version. If not detected version, use default version.
-    const detected = await new this.DetectorClass(this.name).detectVersionRange(
-      process.cwd(),
-    );
+    const detected = await new Detector(
+      this.name,
+      this.type,
+    ).detectVersionRange(process.cwd());
 
     // Handle detected version.
     if ("versionRange" in detected) {

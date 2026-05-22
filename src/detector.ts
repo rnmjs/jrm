@@ -25,12 +25,12 @@ const REASON_PRIORITY: Record<VersionDetectFailureReason, number> = {
   "name-not-matched": 2,
 };
 
-export abstract class Detector {
-  protected abstract readonly type: "runtime" | "packageManager";
-
-  protected readonly name: string;
-  constructor(name: string) {
+export class Detector {
+  private readonly name: string;
+  private readonly type: "runtime" | "packageManager";
+  constructor(name: string, type: "runtime" | "packageManager") {
     this.name = name;
+    this.type = type;
   }
 
   async detectVersionRange(
