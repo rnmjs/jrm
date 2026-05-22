@@ -8,6 +8,7 @@ export class YarnPackageManager extends Executable {
   private readonly NPM_REGISTRY = registryUrl();
 
   override name = "yarn";
+  override type = "packageManager" as const;
   protected override bundledBinaries = ["yarnpkg"];
 
   protected override async getRemoteVersionsRaw(): Promise<string[]> {

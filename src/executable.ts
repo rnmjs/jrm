@@ -24,6 +24,7 @@ export interface ExecutableOptions {
 
 export abstract class Executable {
   abstract readonly name: string;
+  abstract readonly type: "runtime" | "packageManager";
   /**
    * Other bundled binaries of this executable, like npm and npx in node.
    */
@@ -264,7 +265,7 @@ export abstract class Executable {
     );
 
     // Handle detected version.
-    if (detected) {
+    if ("versionRange" in detected) {
       // Use installed version.
       const satisfiedVersion = installedVersions.find((installedVersion) =>
         semver.satisfies(installedVersion, detected.versionRange),
@@ -302,9 +303,10 @@ export abstract class Executable {
         }
       }
     }
-    // Handle not detected version.
+    // Handle not detected version. Strict mode only triggers when the user has
+    // explicitly declared a constraint for this type that excludes this executable.
     else {
-      if (this.strict) {
+      if (this.strict && detected.reason === "name-not-matched") {
         await this.writeStubBinaries(
           multishellPath,
           () =>

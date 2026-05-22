@@ -8,6 +8,7 @@ export class NpmPackageManager extends Executable {
   private readonly NPM_REGISTRY = registryUrl();
 
   override name = "npm";
+  override type = "packageManager" as const;
   protected override bundledBinaries = ["npx"];
 
   protected override async getRemoteVersionsRaw(): Promise<string[]> {

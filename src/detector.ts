@@ -7,6 +7,24 @@ export interface VersionDetectResult {
   onFail?: "download" | "error" | "warn" | "ignore";
 }
 
+export type VersionDetectFailureReason =
+  // No config file found (none of package.json, .jrmrc.json, jrm.config.json exist)
+  | "no-config"
+  // Config file exists, but missing devEngines, or missing the runtime/packageManager field under devEngines
+  | "no-type-field"
+  // The devEngines.runtime or devEngines.packageManager field exists, but contains no entry whose name matches the current one
+  | "name-not-matched";
+
+export interface VersionDetectFailedResult {
+  reason: VersionDetectFailureReason;
+}
+
+const REASON_PRIORITY: Record<VersionDetectFailureReason, number> = {
+  "no-config": 0,
+  "no-type-field": 1,
+  "name-not-matched": 2,
+};
+
 export abstract class Detector {
   protected abstract readonly type: "runtime" | "packageManager";
 
@@ -17,49 +35,59 @@ export abstract class Detector {
 
   async detectVersionRange(
     currentDir: string,
-  ): Promise<VersionDetectResult | undefined> {
+  ): Promise<VersionDetectResult | VersionDetectFailedResult> {
+    let bestReason: VersionDetectFailureReason = "no-config";
     let dir = currentDir;
     while (true) {
-      const result = await this.handle(dir).catch(() => undefined);
-      if (result) return result;
+      const fallback: VersionDetectFailedResult = { reason: "no-config" };
+      const result = await this.handle(dir).catch(() => fallback);
+      if ("versionRange" in result) return result;
+      if (REASON_PRIORITY[result.reason] > REASON_PRIORITY[bestReason]) {
+        bestReason = result.reason;
+      }
       const parent = path.dirname(dir);
       if (parent === dir) break;
       dir = parent;
     }
-    return undefined;
+    return { reason: bestReason };
   }
 
-  protected async handle(
+  private async handle(
     dirPath: string,
-  ): Promise<VersionDetectResult | undefined> {
-    return (
-      (await this.handlePkgDevEngines(dirPath, this.type)) ??
-      (await this.handleConfig(dirPath, this.type))
-    );
+  ): Promise<VersionDetectResult | VersionDetectFailedResult> {
+    const pkg = await this.handlePkgDevEngines(dirPath, this.type);
+    if ("versionRange" in pkg) return pkg;
+    const config = await this.handleConfig(dirPath, this.type);
+    if ("versionRange" in config) return config;
+    return REASON_PRIORITY[pkg.reason] >= REASON_PRIORITY[config.reason]
+      ? pkg
+      : config;
   }
 
-  private resolveVersionFromRaw(raw: unknown): VersionDetectResult | undefined {
+  private resolveVersionFromRaw(
+    raw: unknown,
+  ): VersionDetectResult | VersionDetectFailedResult {
+    if (raw === undefined || raw === null) {
+      return { reason: "no-type-field" };
+    }
     const items: {
       name?: string;
       version?: string;
       onFail?: Required<VersionDetectResult>["onFail"];
-    }[] = !raw ? [] : Array.isArray(raw) ? raw : [raw];
+    }[] = Array.isArray(raw) ? raw : [raw];
     const matched = items.find((i) => i.name === this.name);
-    if (!matched) return undefined;
+    if (!matched) return { reason: "name-not-matched" };
 
-    const result: VersionDetectResult = {
+    return {
       versionRange: matched.version ?? "*",
+      ...(matched.onFail ? { onFail: matched.onFail } : {}),
     };
-    if (matched.onFail) {
-      result.onFail = matched.onFail;
-    }
-    return result;
   }
 
-  protected async handleConfig(
+  private async handleConfig(
     dirPath: string,
     field: "runtime" | "packageManager",
-  ): Promise<VersionDetectResult | undefined> {
+  ): Promise<VersionDetectResult | VersionDetectFailedResult> {
     const configPaths = [".jrmrc.json", "jrm.config.json"].map((file) =>
       path.join(dirPath, file),
     );
@@ -70,18 +98,18 @@ export abstract class Detector {
       })),
     );
     const configPath = configs.find((config) => config.isExists)?.configPath;
-    if (!configPath) return undefined;
+    if (!configPath) return { reason: "no-config" };
 
     const content = await fs.readFile(configPath, "utf8");
     return this.resolveVersionFromRaw(JSON.parse(content)?.[field]);
   }
 
-  protected async handlePkgDevEngines(
+  private async handlePkgDevEngines(
     dirPath: string,
     field: "runtime" | "packageManager",
-  ): Promise<VersionDetectResult | undefined> {
+  ): Promise<VersionDetectResult | VersionDetectFailedResult> {
     const packageJsonPath = path.join(dirPath, "package.json");
-    if (!(await exists(packageJsonPath))) return undefined;
+    if (!(await exists(packageJsonPath))) return { reason: "no-config" };
 
     const content = await fs.readFile(packageJsonPath, "utf8");
     return this.resolveVersionFromRaw(JSON.parse(content)?.devEngines?.[field]);

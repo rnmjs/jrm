@@ -9,6 +9,7 @@ export class DenoRuntime extends Executable {
   private readonly GITHUB_API_URL = "https://api.github.com";
 
   override name = "deno";
+  override type = "runtime" as const;
   protected override bundledBinaries: string[] = [];
 
   private getTarget(): string {

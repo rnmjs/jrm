@@ -67,16 +67,16 @@ describe("RuntimeDetector", () => {
     expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
   });
 
-  it("should return undefined when no version file found in any parent directory", async () => {
+  it("should return no-config reason when no version file found in any parent directory", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(false);
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBeUndefined();
+    expect(result).toEqual({ reason: "no-config" });
   });
 
-  it("should return undefined when package.json has no devEngines", async () => {
+  it("should return no-type-field reason when package.json has no devEngines", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
@@ -89,12 +89,32 @@ describe("RuntimeDetector", () => {
       }),
     );
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBeUndefined();
+    expect(result).toEqual({ reason: "no-type-field" });
   });
 
-  it("should return undefined when runtime name does not match", async () => {
+  it("should return no-type-field reason when devEngines exists but has no runtime field", async () => {
+    const detector = new RuntimeDetector("node");
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("package.json")),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({
+        name: "test-package",
+        devEngines: {
+          packageManager: { name: "pnpm", version: "10.0.0" },
+        },
+      }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir");
+
+    expect(result).toEqual({ reason: "no-type-field" });
+  });
+
+  it("should return name-not-matched reason when runtime name does not match", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockImplementation(
       async (filePath: string) =>
@@ -112,9 +132,9 @@ describe("RuntimeDetector", () => {
       }),
     );
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBeUndefined();
+    expect(result).toEqual({ reason: "name-not-matched" });
   });
 
   it("should detect onFail from package.json", async () => {
@@ -204,18 +224,18 @@ describe("RuntimeDetector", () => {
     );
     vi.mocked(fs.readFile).mockResolvedValue("{ invalid json }");
 
-    const version = await detector.detectVersionRange("/test/dir");
+    const result = await detector.detectVersionRange("/test/dir");
 
-    expect(version).toBeUndefined();
+    expect(result).toEqual({ reason: "no-config" });
   });
 
   it("should stop at root directory", async () => {
     const detector = new RuntimeDetector("node");
     vi.mocked(exists).mockResolvedValue(false);
 
-    const version = await detector.detectVersionRange("/");
+    const result = await detector.detectVersionRange("/");
 
-    expect(version).toBeUndefined();
+    expect(result).toEqual({ reason: "no-config" });
   });
 
   it("should detect version from .jrmrc.json", async () => {
@@ -303,5 +323,47 @@ describe("RuntimeDetector", () => {
     const result = await detector.detectVersionRange("/test/dir");
 
     expect(result).toEqual({ versionRange: ">=18.0.0" });
+  });
+
+  it("should prefer name-not-matched over no-type-field across ancestors", async () => {
+    const detector = new RuntimeDetector("node");
+    // /test/dir/sub has package.json with runtime.name="bun" (name-not-matched)
+    // /test/dir has package.json with no devEngines (no-type-field)
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(filePath.endsWith("package.json")),
+    );
+    // eslint-disable-next-line @typescript-eslint/require-await -- Mock
+    vi.mocked(fs.readFile).mockImplementation(async (filePath) => {
+      if (typeof filePath === "string" && filePath.includes("/sub/")) {
+        return JSON.stringify({
+          devEngines: { runtime: { name: "bun", version: "1.0.0" } },
+        });
+      }
+      return JSON.stringify({ name: "outer" });
+    });
+
+    const result = await detector.detectVersionRange("/test/dir/sub");
+
+    expect(result).toEqual({ reason: "name-not-matched" });
+  });
+
+  it("should prefer no-type-field over no-config across ancestors", async () => {
+    const detector = new RuntimeDetector("node");
+    // /test/dir/sub has no package.json (no-config)
+    // /test/dir has package.json with no devEngines (no-type-field)
+    vi.mocked(exists).mockImplementation(
+      async (filePath: string) =>
+        await Promise.resolve(
+          filePath.endsWith("package.json") && !filePath.includes("/sub/"),
+        ),
+    );
+    vi.mocked(fs.readFile).mockResolvedValue(
+      JSON.stringify({ name: "outer", version: "1.0.0" }),
+    );
+
+    const result = await detector.detectVersionRange("/test/dir/sub");
+
+    expect(result).toEqual({ reason: "no-type-field" });
   });
 });

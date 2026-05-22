@@ -35,6 +35,7 @@ vi.mock("./utils/is-in-project.ts");
 // Create a concrete implementation of the abstract Executable class for testing
 class TestExecutable extends Executable {
   readonly name = "testruntime";
+  readonly type = "runtime" as const;
   protected readonly bundledBinaries = ["testbin", "testtool"];
 
   protected async getRemoteVersionsRaw(): Promise<string[]> {
@@ -189,7 +190,7 @@ describe("Executable", () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
       vi.mocked(exists).mockResolvedValue(false);
       vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        undefined,
+        { reason: "no-config" },
       );
 
       const result = await executable.use();
@@ -208,7 +209,7 @@ describe("Executable", () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
       vi.mocked(exists).mockResolvedValue(false);
       vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        undefined,
+        { reason: "no-config" },
       );
 
       const result = await executable.use();
@@ -361,14 +362,14 @@ describe("Executable", () => {
       process.env["JRM_MULTISHELL_PATH_OF_TESTRUNTIME"] = multishellPath;
     });
 
-    it("should create error stub binaries when strict mode is enabled, in project, and no version configured", async () => {
+    it("should create error stub binaries when strict mode is enabled, in project, and detected reason is name-not-matched", async () => {
       const executable = new TestExecutable({
         strict: true,
         DetectorClass: RuntimeDetector,
       });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        undefined,
+        { reason: "name-not-matched" },
       );
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
@@ -381,7 +382,7 @@ describe("Executable", () => {
       expect(fs.mkdir).toHaveBeenCalledWith(path.join(multishellPath, "bin"), {
         recursive: true,
       });
-      // writeStubBinaries is called twice: once for no installed version (line 228), once for strict mode (line 279)
+      // writeStubBinaries is called twice: once for no installed version, once for strict mode
       expect(fs.writeFile).toHaveBeenCalledTimes(6); // 3 binaries × 2 calls
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(multishellPath, "bin", "testruntime"),
@@ -401,8 +402,53 @@ describe("Executable", () => {
           "Current project is not configured with testruntime",
         ),
       );
-      // chmod is called twice: once for no installed version (line 228), once for strict mode (line 279)
-      expect(fs.chmod).toHaveBeenCalledTimes(6); // 3 binaries × 2 writeStubBinaries calls
+      expect(fs.chmod).toHaveBeenCalledTimes(6);
+    });
+
+    it("should NOT create error stub binaries when strict mode is enabled but reason is no-config", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        { reason: "no-config" },
+      );
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should NOT create stub binaries with the strict "not configured" message
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "Current project is not configured with testruntime",
+        ),
+      );
+    });
+
+    it("should NOT create error stub binaries when strict mode is enabled but reason is no-type-field", async () => {
+      const executable = new TestExecutable({
+        strict: true,
+        DetectorClass: RuntimeDetector,
+      });
+      vi.mocked(isInProject).mockResolvedValue(true);
+      vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
+        { reason: "no-type-field" },
+      );
+      vi.mocked(fs.readdir).mockResolvedValue([]);
+
+      const result = await executable.use(undefined);
+
+      expect(result).toBeUndefined();
+      // Should NOT create stub binaries with the strict "not configured" message
+      expect(fs.writeFile).not.toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining(
+          "Current project is not configured with testruntime",
+        ),
+      );
     });
 
     it("should proceed normally when strict mode is enabled but version is configured", async () => {
@@ -436,7 +482,7 @@ describe("Executable", () => {
       });
       vi.mocked(isInProject).mockResolvedValue(false);
       vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        undefined,
+        { reason: "name-not-matched" },
       );
       vi.mocked(fs.readdir).mockResolvedValue([]);
 
@@ -454,7 +500,7 @@ describe("Executable", () => {
       const executable = new TestExecutable({ DetectorClass: RuntimeDetector });
       vi.mocked(isInProject).mockResolvedValue(true);
       vi.mocked(RuntimeDetector.prototype.detectVersionRange).mockResolvedValue(
-        undefined,
+        { reason: "name-not-matched" },
       );
       vi.mocked(fs.readdir).mockResolvedValue([]);
 

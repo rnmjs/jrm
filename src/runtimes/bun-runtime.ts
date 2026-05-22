@@ -10,6 +10,7 @@ export class BunRuntime extends Executable {
   private readonly GITHUB_REPO = "oven-sh/bun";
 
   override name = "bun";
+  override type = "runtime" as const;
   protected override bundledBinaries: string[] = [];
 
   private getTarget(): string {

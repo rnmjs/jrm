@@ -8,6 +8,7 @@ export class PnpmPackageManager extends Executable {
   private readonly NPM_REGISTRY = registryUrl();
 
   override name = "pnpm";
+  override type = "packageManager" as const;
   protected override bundledBinaries = ["pnpx"];
 
   protected override async getRemoteVersionsRaw(): Promise<string[]> {

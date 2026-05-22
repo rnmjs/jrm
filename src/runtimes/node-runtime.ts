@@ -8,6 +8,7 @@ export class NodeRuntime extends Executable {
   private readonly NODE_DIST_MIRROR = "https://nodejs.org/dist";
 
   override name = "node";
+  override type = "runtime" as const;
   protected override bundledBinaries = ["npm", "npx"];
 
   protected override async getRemoteVersionsRaw(): Promise<string[]> {
