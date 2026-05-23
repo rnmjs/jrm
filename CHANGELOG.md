@@ -1,5 +1,16 @@
 # jrm
 
+## 0.5.1
+
+### Patch Changes
+
+- 65a3ed2: feat: suggest non-interactive `jrm use -y` in stub binary error message
+
+  Users hitting the stub binary will likely copy-paste the suggested command
+  in a non-interactive context (CI, scripts, automated shells), where the
+  default prompt would block. Adding `-y` makes the suggestion work out of
+  the box.
+
 ## 0.5.0
 
 ### Minor Changes
