@@ -539,7 +539,7 @@ describe("Executable", () => {
       );
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(multishellPath, "bin", "testruntime"),
-        expect.stringContaining("jrm use 'testruntime@^3.0.0'"),
+        expect.stringContaining("jrm use --yes 'testruntime@^3.0.0'"),
       );
     });
 

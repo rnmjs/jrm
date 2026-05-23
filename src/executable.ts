@@ -294,7 +294,7 @@ export abstract class Executable {
             await this.writeStubBinaries(
               multishellPath,
               (binary) =>
-                `No installed version of ${this.name} satisfies the project requirements. Run \`jrm use '${this.name}@${detected.versionRange}'\` to make ${binary} available.`,
+                `No installed version of ${this.name} satisfies the project requirements. Run \`jrm use --yes '${this.name}@${detected.versionRange}'\` to make ${binary} available.`,
             );
           }
           return installedVersion;
