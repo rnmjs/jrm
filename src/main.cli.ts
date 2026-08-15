@@ -5,6 +5,7 @@ import pkgJson from "../package.json" with { type: "json" };
 import { envCommand } from "./commands/env-command.ts";
 import { installCommand } from "./commands/install-command.ts";
 import { listCommand } from "./commands/list-command.ts";
+import { pmCommand } from "./commands/pm-command.ts";
 import { uninstallCommand } from "./commands/uninstall-command.ts";
 import { useCommand } from "./commands/use-command.ts";
 
@@ -35,8 +36,18 @@ program
 program
   .command("env")
   .description("generate shell environment setup script")
-  .action(() => {
-    envCommand();
+  .option("--no-pm", "do not inject the pm shell function")
+  .action((options: { pm: boolean }) => {
+    envCommand(options);
+  });
+
+program
+  .command("pm")
+  .description(
+    "print the package manager detected for the current project/directory",
+  )
+  .action(async () => {
+    await pmCommand();
   });
 
 program

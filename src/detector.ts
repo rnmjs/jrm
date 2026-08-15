@@ -2,9 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { exists } from "./utils/exists.ts";
 
+export interface VersionDetectSource {
+  configPath: string;
+  index: number;
+}
+
 export interface VersionDetectResult {
   versionRange: string;
   onFail?: "download" | "error" | "warn" | "ignore";
+  source?: VersionDetectSource;
 }
 
 export type VersionDetectFailureReason =
@@ -66,6 +72,7 @@ export class Detector {
 
   private resolveVersionFromRaw(
     raw: unknown,
+    configPath: string,
   ): VersionDetectResult | VersionDetectFailedResult {
     if (raw === undefined || raw === null) {
       return { reason: "no-type-field" };
@@ -75,12 +82,14 @@ export class Detector {
       version?: string;
       onFail?: Required<VersionDetectResult>["onFail"];
     }[] = Array.isArray(raw) ? raw : [raw];
-    const matched = items.find((i) => i.name === this.name);
+    const index = items.findIndex((i) => i.name === this.name);
+    const matched = items[index];
     if (!matched) return { reason: "name-not-matched" };
 
     return {
       versionRange: matched.version ?? "*",
       ...(matched.onFail ? { onFail: matched.onFail } : {}),
+      source: { configPath, index },
     };
   }
 
@@ -96,11 +105,17 @@ export class Detector {
         isExists: await exists(configPath),
       })),
     );
+    // Intentional: only the first existing config file is read. If .jrmrc.json
+    // exists but lacks the requested field, jrm.config.json in the same
+    // directory is shadowed rather than used as a fallback.
     const configPath = configs.find((config) => config.isExists)?.configPath;
     if (!configPath) return { reason: "no-config" };
 
     const content = await fs.readFile(configPath, "utf8");
-    return this.resolveVersionFromRaw(JSON.parse(content)?.[this.type]);
+    return this.resolveVersionFromRaw(
+      JSON.parse(content)?.[this.type],
+      configPath,
+    );
   }
 
   private async handlePkgDevEngines(
@@ -112,6 +127,7 @@ export class Detector {
     const content = await fs.readFile(packageJsonPath, "utf8");
     return this.resolveVersionFromRaw(
       JSON.parse(content)?.devEngines?.[this.type],
+      packageJsonPath,
     );
   }
 }

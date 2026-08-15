@@ -54,6 +54,11 @@ jrm__chpwd() {
 }
 autoload -Uz add-zsh-hook
 add-zsh-hook chpwd jrm__chpwd
+
+pm() {
+  local p; p="$(jrm pm)" || return 1
+  command "$p" "$@"
+}
 `,
     );
   });
@@ -75,6 +80,11 @@ __jrmcd() {
   jrm use
 }
 alias cd=__jrmcd
+
+pm() {
+  local p; p="$(jrm pm)" || return 1
+  command "$p" "$@"
+}
 `,
     );
   });
@@ -83,6 +93,53 @@ alias cd=__jrmcd
     process.env["SHELL"] = "";
 
     envCommand();
+
+    expect(process.stdout.write).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(process.stdout.write).mock.calls[0]?.[0]).toBe(
+      `export JRM_MULTISHELL_PATH_OF_NODE="/home/testuser/.jrm/node/multishells/test"
+export JRM_MULTISHELL_PATH_OF_PNPM="/home/testuser/.jrm/pnpm/multishells/test"
+jrm use
+export PATH="$JRM_MULTISHELL_PATH_OF_NODE/bin:$JRM_MULTISHELL_PATH_OF_PNPM/bin:$PATH"
+
+__jrmcd() {
+  \\cd "$@" || return $?
+  jrm use
+}
+alias cd=__jrmcd
+
+pm() {
+  local p; p="$(jrm pm)" || return 1
+  command "$p" "$@"
+}
+`,
+    );
+  });
+
+  it("should not inject pm function when pm option is false (zsh)", () => {
+    process.env["SHELL"] = "/bin/zsh";
+
+    envCommand({ pm: false });
+
+    expect(process.stdout.write).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(process.stdout.write).mock.calls[0]?.[0]).toBe(
+      `export JRM_MULTISHELL_PATH_OF_NODE="/home/testuser/.jrm/node/multishells/test"
+export JRM_MULTISHELL_PATH_OF_PNPM="/home/testuser/.jrm/pnpm/multishells/test"
+jrm use
+export PATH="$JRM_MULTISHELL_PATH_OF_NODE/bin:$JRM_MULTISHELL_PATH_OF_PNPM/bin:$PATH"
+
+jrm__chpwd() {
+  jrm use
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd jrm__chpwd
+`,
+    );
+  });
+
+  it("should not inject pm function when pm option is false (bash)", () => {
+    process.env["SHELL"] = "/bin/bash";
+
+    envCommand({ pm: false });
 
     expect(process.stdout.write).toHaveBeenCalledTimes(1);
     expect(vi.mocked(process.stdout.write).mock.calls[0]?.[0]).toBe(

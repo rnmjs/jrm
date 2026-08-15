@@ -23,7 +23,7 @@ Read `scripts` field of `package.json` for common scripts.
 
 ### Module Organization
 
-- `src/commands/` — CLI commands: `env`, `install`, `list`, `uninstall`, `use`
+- `src/commands/` — CLI commands: `env`, `install`, `list`, `pm`, `uninstall`, `use`
 - `src/runtimes/` — Runtime-specific implementations for node, bun, deno
 - `src/package-managers/` — Package manager implementations for npm, pnpm, yarn
 - `src/utils/` — Shared utilities (`ask`, `download`, `exists`, `is-in-project`, `registry-url`)

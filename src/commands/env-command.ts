@@ -10,7 +10,13 @@ function getShellName(): string {
   return path.basename(process.env["SHELL"] ?? "");
 }
 
-function handleZsh(envs: Record<string, string>): string {
+const PM_FUNCTION = `
+pm() {
+  local p; p="$(jrm pm)" || return 1
+  command "$p" "$@"
+}`;
+
+function handleZsh(envs: Record<string, string>, pm: boolean): string {
   return [
     ...Object.entries(envs).map(([k, v]) => `export ${k}="${v}"`),
     "jrm use",
@@ -25,10 +31,11 @@ jrm__chpwd() {
 }
 autoload -Uz add-zsh-hook
 add-zsh-hook chpwd jrm__chpwd`,
+    ...(pm ? [PM_FUNCTION] : []),
   ].join("\n");
 }
 
-function handleBash(envs: Record<string, string>): string {
+function handleBash(envs: Record<string, string>, pm: boolean): string {
   return [
     ...Object.entries(envs).map(([k, v]) => `export ${k}="${v}"`),
     "jrm use",
@@ -42,10 +49,16 @@ __jrmcd() {
   jrm use
 }
 alias cd=__jrmcd`,
+    ...(pm ? [PM_FUNCTION] : []),
   ].join("\n");
 }
 
-export function envCommand(): void {
+export interface EnvCommandOptions {
+  pm?: boolean;
+}
+
+export function envCommand(options: EnvCommandOptions = {}): void {
+  const pm = options.pm ?? true;
   const envs = getAllExecutables()
     .map((executable) => executable.env())
     .reduce((acc, cur) => ({ ...acc, ...cur }), {});
@@ -53,11 +66,11 @@ export function envCommand(): void {
   const shellName = getShellName();
   switch (shellName) {
     case "zsh":
-      print(handleZsh(envs));
+      print(handleZsh(envs, pm));
       break;
     case "bash":
     case "":
-      print(handleBash(envs));
+      print(handleBash(envs, pm));
       break;
     default:
       throw new Error(`Unsupported shell: ${shellName}`);

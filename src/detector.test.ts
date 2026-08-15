@@ -36,7 +36,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=16.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=16.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should detect version from package.json with multiple runtimes", async () => {
@@ -65,7 +69,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=18.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 1 },
+      });
     });
 
     it("should return no-config reason when no version file found in any parent directory", async () => {
@@ -159,7 +167,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=16.0.0", onFail: "warn" });
+      expect(result).toEqual({
+        versionRange: ">=16.0.0",
+        onFail: "warn",
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should detect onFail with multiple runtimes", async () => {
@@ -190,7 +202,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=18.0.0", onFail: "ignore" });
+      expect(result).toEqual({
+        versionRange: ">=18.0.0",
+        onFail: "ignore",
+        source: { configPath: "/test/dir/package.json", index: 1 },
+      });
     });
 
     it("should detect onFail as download", async () => {
@@ -214,7 +230,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=20.0.0", onFail: "download" });
+      expect(result).toEqual({
+        versionRange: ">=20.0.0",
+        onFail: "download",
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should handle invalid JSON in package.json gracefully", async () => {
@@ -256,7 +276,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=20.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=20.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/.jrmrc.json", index: 0 },
+      });
     });
 
     it("should detect version from jrm.config.json when .jrmrc.json not exists", async () => {
@@ -276,7 +300,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=18.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=18.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/jrm.config.json", index: 0 },
+      });
     });
 
     it("should prefer .jrmrc.json over jrm.config.json", async () => {
@@ -296,7 +324,10 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: "20.0.0" });
+      expect(result).toEqual({
+        versionRange: "20.0.0",
+        source: { configPath: "/test/dir/.jrmrc.json", index: 0 },
+      });
     });
 
     it("should fallback to package.json when config has no matching runtime", async () => {
@@ -324,7 +355,10 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=18.0.0" });
+      expect(result).toEqual({
+        versionRange: ">=18.0.0",
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should prefer name-not-matched over no-type-field across ancestors", async () => {
@@ -391,7 +425,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=9.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=9.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should detect version from package.json with multiple packageManagers", async () => {
@@ -420,7 +458,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=10.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=10.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 1 },
+      });
     });
 
     it("should return no-type-field reason when package.json has no devEngines", async () => {
@@ -503,7 +545,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: "*", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: "*",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should search parent directories when no package.json in current directory", async () => {
@@ -525,7 +571,10 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir/sub/nested");
 
-      expect(result).toEqual({ versionRange: "8.0.0" });
+      expect(result).toEqual({
+        versionRange: "8.0.0",
+        source: { configPath: "/test/dir/sub/package.json", index: 0 },
+      });
     });
 
     it("should return no-config reason when no package.json found in any parent directory", async () => {
@@ -567,7 +616,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=9.0.0", onFail: "warn" });
+      expect(result).toEqual({
+        versionRange: ">=9.0.0",
+        onFail: "warn",
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should detect onFail with multiple packageManagers", async () => {
@@ -598,7 +651,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=10.0.0", onFail: "ignore" });
+      expect(result).toEqual({
+        versionRange: ">=10.0.0",
+        onFail: "ignore",
+        source: { configPath: "/test/dir/package.json", index: 1 },
+      });
     });
 
     it("should handle invalid JSON in package.json gracefully", async () => {
@@ -634,7 +691,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: "4.6.0" });
+      expect(result).toEqual({
+        versionRange: "4.6.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should detect version from .jrmrc.json", async () => {
@@ -654,7 +715,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=9.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=9.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/.jrmrc.json", index: 0 },
+      });
     });
 
     it("should detect version from jrm.config.json when .jrmrc.json not exists", async () => {
@@ -674,7 +739,11 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=8.0.0", onFail: undefined });
+      expect(result).toEqual({
+        versionRange: ">=8.0.0",
+        onFail: undefined,
+        source: { configPath: "/test/dir/jrm.config.json", index: 0 },
+      });
     });
 
     it("should prefer .jrmrc.json over jrm.config.json", async () => {
@@ -694,7 +763,10 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: "9.0.0" });
+      expect(result).toEqual({
+        versionRange: "9.0.0",
+        source: { configPath: "/test/dir/.jrmrc.json", index: 0 },
+      });
     });
 
     it("should fallback to package.json when config has no matching pm", async () => {
@@ -722,7 +794,10 @@ describe("Detector", () => {
 
       const result = await detector.detectVersionRange("/test/dir");
 
-      expect(result).toEqual({ versionRange: ">=9.0.0" });
+      expect(result).toEqual({
+        versionRange: ">=9.0.0",
+        source: { configPath: "/test/dir/package.json", index: 0 },
+      });
     });
 
     it("should prefer name-not-matched over no-type-field across ancestors", async () => {
