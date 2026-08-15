@@ -16,6 +16,7 @@ A fast and simple version manager for JavaScript runtimes and package managers. 
 - 🎯 **Auto-Detection** — Automatically detects versions from `package.json`
 - 📦 **Version Range Support** — Use semver ranges like `node@>=20`
 - 🌐 **Custom Registry** — Respects your npm registry configuration
+- 🔀 **`pm` Alias** — Run the project's configured package manager without remembering which one it is
 
 ## 🚀 Installation
 
@@ -103,7 +104,18 @@ node -v # 20.x.x
 pnpm -v # 9.0.0
 ```
 
-### 4. Other Commands
+### 4. `pm` Alias
+
+With `eval "$(jrm env)"` enabled, a `pm` shell function forwards commands to the package manager configured for the current project:
+
+```bash
+pm install    # runs `pnpm install` if the project is configured with pnpm
+pm run build  # runs `pnpm run build`
+```
+
+Run `jrm pm` to print the detected package manager name. Opt out with `eval "$(jrm env --no-pm)"`.
+
+### 5. Other Commands
 
 ```bash
 # Install specific versions
