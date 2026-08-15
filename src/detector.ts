@@ -55,9 +55,9 @@ export class Detector {
   private async handle(
     dirPath: string,
   ): Promise<VersionDetectResult | VersionDetectFailedResult> {
-    const pkg = await this.handlePkgDevEngines(dirPath, this.type);
+    const pkg = await this.handlePkgDevEngines(dirPath);
     if ("versionRange" in pkg) return pkg;
-    const config = await this.handleConfig(dirPath, this.type);
+    const config = await this.handleConfig(dirPath);
     if ("versionRange" in config) return config;
     return REASON_PRIORITY[pkg.reason] >= REASON_PRIORITY[config.reason]
       ? pkg
@@ -86,7 +86,6 @@ export class Detector {
 
   private async handleConfig(
     dirPath: string,
-    field: "runtime" | "packageManager",
   ): Promise<VersionDetectResult | VersionDetectFailedResult> {
     const configPaths = [".jrmrc.json", "jrm.config.json"].map((file) =>
       path.join(dirPath, file),
@@ -101,17 +100,18 @@ export class Detector {
     if (!configPath) return { reason: "no-config" };
 
     const content = await fs.readFile(configPath, "utf8");
-    return this.resolveVersionFromRaw(JSON.parse(content)?.[field]);
+    return this.resolveVersionFromRaw(JSON.parse(content)?.[this.type]);
   }
 
   private async handlePkgDevEngines(
     dirPath: string,
-    field: "runtime" | "packageManager",
   ): Promise<VersionDetectResult | VersionDetectFailedResult> {
     const packageJsonPath = path.join(dirPath, "package.json");
     if (!(await exists(packageJsonPath))) return { reason: "no-config" };
 
     const content = await fs.readFile(packageJsonPath, "utf8");
-    return this.resolveVersionFromRaw(JSON.parse(content)?.devEngines?.[field]);
+    return this.resolveVersionFromRaw(
+      JSON.parse(content)?.devEngines?.[this.type],
+    );
   }
 }
