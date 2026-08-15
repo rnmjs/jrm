@@ -8,4 +8,4 @@ node-compile-cache
 coverage
 assets
 *.local.*
-docs
+docs/agents
